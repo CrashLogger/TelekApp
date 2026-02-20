@@ -33,17 +33,21 @@ async def on_message(message):
     if message.content == "debug replies":
         print("Woah mr hacker over here")
         print(io_helper.file_name_list)
+        print(io_helper.file_types_list)
+        await message.channel.send("My replies are:")
         await message.channel.send(io_helper.file_name_list)
+        await message.channel.send("And their formats are:")
+        await message.channel.send(io_helper.file_types_list)
+        
     elif message.content in io_helper.file_name_list:
-        print(message.content)
-        image_path = os.path.join(working_dir, autoresponse_path, io_helper.file_list[io_helper.file_name_list.index(message.content)])
-        print(f"{image_path} no me jodas")
-        if os.path.exists(image_path):
-            print(f"{image_path} no me jodas")
-            file_to_send = discord.File(image_path, filename=image_path)
-            await message.channel.send(file=file_to_send)
-
-
+        file_path = os.path.join(working_dir, autoresponse_path, io_helper.file_list[io_helper.file_name_list.index(message.content)])
+        if io_helper.file_types_list[io_helper.file_name_list.index(message.content)] in io_helper.TEXT_FORMATS:
+            message_to_send = io_helper.read_text_file(file_path)
+            await message.channel.send(message_to_send)
+        else:
+            if os.path.exists(file_path):
+                file_to_send = discord.File(file_path, filename=file_path)
+                await message.channel.send(file=file_to_send)
 
 # Por algún motivo que aun no entiendo esto tiene que ir al final
 bot.run(DISCORD_TOKEN)
