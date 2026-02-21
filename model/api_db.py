@@ -1,7 +1,7 @@
 import sqlite3
 from flask import g
 
-DATABASE = "TelekApp/erlantzi_es_un_txapuzas.db"
+DATABASE = "erlantzi_es_un_txapuzas.db"
 
 
 # =========================

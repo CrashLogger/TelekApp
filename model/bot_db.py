@@ -1,7 +1,7 @@
 import sqlite3
 import random
 
-DB_PATH = "TelekApp/erlantzi_es_un_txapuzas.db"
+DB_PATH = "erlantzi_es_un_txapuzas.db"
 
 def get_combos(trigger_content=None):
     """

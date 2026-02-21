@@ -3,31 +3,27 @@ import os
 from flask import Flask, jsonify, request, send_from_directory
 from functools import wraps
 import base64
+
 import jwt
+from jwt import encode, decode
+
 import datetime
 
 from model.api_db import *
 from dotenv import load_dotenv
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-
-
+PROJECT_ROOT = os.getcwd()
 
 load_dotenv()
 
 app = Flask(__name__)
 
-
 app.config['SECRET_KEY'] = os.environ.get('JWT_SECRET', os.getenv('SECRET_KEY'))
-
 app.config["JSON_SORT_KEYS"] = False
 
 @app.teardown_appcontext
 def teardown_db(exception):
     close_db(exception)
-
-from flask import request, jsonify
 
 def requires_auth(f):
     @wraps(f)
@@ -41,7 +37,7 @@ def requires_auth(f):
         if auth_header.startswith('Bearer '):
             token = auth_header.split(' ', 1)[1].strip()
             try:
-                payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+                payload = decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
                 username = payload.get('sub')
                 print("Username from JWT:", username)
                 return f(*args, **kwargs)  # If JWT is valid, proceed immediately
@@ -72,7 +68,6 @@ def requires_auth(f):
         return f(*args, **kwargs)
     return decorated
 
-
 @app.route('/discordbotapi', methods=['POST'])
 @requires_auth
 def discord_bot_api():
@@ -97,12 +92,10 @@ def discord_bot_api():
 
     return jsonify({"Success": "omg cafecito lo hiciste!"}), 200
 
-
 @app.route('/autoresponse', methods=['GET'])
 @requires_auth
 def get_all_combos_route():
     return jsonify(get_combos()), 200
-
 
 @app.route('/autoresponse/<trigger>', methods=['GET'])
 @requires_auth
@@ -134,6 +127,7 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password_hash = data.get('password_hash')
+    print(f"{username} && {password_hash}")
     if not username or not password_hash:
         return jsonify({"error": "No username or password_hash provided"}), 400
     # Authenticate credentials
@@ -149,7 +143,8 @@ def login():
             'iat': now,
             'exp': exp
         }
-        token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+        token = encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+        print("here")
         return jsonify({"access_token": token, "token_type": "bearer", "expires_at": exp.isoformat() + 'Z'}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to create token: {str(e)}"}), 500
@@ -161,7 +156,7 @@ def auth():
         return jsonify({"error": "No token provided"}), 400
 
     try:
-        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        payload = decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         username = payload.get('sub')
         if not username:
             return jsonify({"error": "Invalid token"}), 401
@@ -185,5 +180,5 @@ def check_auth(username, password_hash):
     return authenticate(username, password_hash)
 
 def run_api():
-    app.run(port=5000, debug=False, use_reloader=True)
+    app.run(port=5000, debug=False, use_reloader=False)
 

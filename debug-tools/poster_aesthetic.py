@@ -5,11 +5,8 @@ import os
 
 api_url = "http://127.0.0.1:5000/discordbotapi"
 
-
-
 trigger = input("Insert trigger: ")
 autoresponse = input("Insert autoresponse: ")
-
 
 load_dotenv()
 username = os.getenv("REAL_API_LOGIN")
