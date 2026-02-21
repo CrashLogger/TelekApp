@@ -35,6 +35,16 @@ class ioHelpers:
         with open(path, 'r', encoding='utf-8') as f:
             text = f.read(2000)
             return(text)
+    
+    def write_file(self, path, file):
+        try:
+            print("Path:")
+            print(path)
+            file.save(path)
+            return(0)
+        except Exception as e:
+            print(e)
+            return(-1)
         
     async def start_periodic_reload(self, interval: int = 60):
         while True:

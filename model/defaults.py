@@ -1,0 +1,1 @@
+AUTORESPONSE_PATH = "autoresponse"
