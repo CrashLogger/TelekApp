@@ -1,39 +1,189 @@
 import os
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
+from functools import wraps
+import base64
+import jwt
+import datetime
 
-from model.iohelpers import ioHelpers
-from model import defaults
-from idents.logins import accs
+from model.api_db import *
+from dotenv import load_dotenv
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+
+
+load_dotenv()
 
 app = Flask(__name__)
 
-autoresponse_path = defaults.AUTORESPONSE_PATH
-io_helper = ioHelpers(autoresponse_path)
+
+app.config['SECRET_KEY'] = os.environ.get('JWT_SECRET', os.getenv('SECRET_KEY'))
+
+app.config["JSON_SORT_KEYS"] = False
+
+@app.teardown_appcontext
+def teardown_db(exception):
+    close_db(exception)
+
+from flask import request, jsonify
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        data = request.get_json(silent=True) or {}
+
+        # 1) Try JWT in Authorization header: Bearer <jwt>
+        auth_header = request.headers.get('Authorization', '')
+        username = None
+        password_hash = None
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ', 1)[1].strip()
+            try:
+                payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+                username = payload.get('sub')
+                print("Username from JWT:", username)
+                return f(*args, **kwargs)  # If JWT is valid, proceed immediately
+            except jwt.ExpiredSignatureError:
+                return jsonify({"Error": "Token expired"}), 401
+            except Exception:
+                # not a JWT we can decode; fall back to previous methods
+                username = None
+
+        # 2) Fallback: Authorization header carrying base64(username:password_hash), JSON body, or custom headers
+        if not username:
+            # legacy: Authorization: Bearer <base64(username:password_hash)>
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ', 1)[1].strip()
+                try:
+                    decoded = base64.b64decode(token).decode('utf-8')
+                    if ':' in decoded:
+                        username, password_hash = decoded.split(':', 1)
+                except Exception:
+                    pass
+
+        if not username or not password_hash:
+            username = username or data.get('username') or request.headers.get('X-Username')
+            password_hash = password_hash or data.get('password_hash') or request.headers.get('X-Password-Hash')
+
+        if not username or (not password_hash and not auth_header.startswith('Bearer ')) or not check_auth(username, password_hash if password_hash else ""):
+            return jsonify({"Error": "Urkullupitxon identifícate"}), 401
+        return f(*args, **kwargs)
+    return decorated
+
 
 @app.route('/discordbotapi', methods=['POST'])
+@requires_auth
 def discord_bot_api():
+    data = request.get_json()
+    if not data:
+        return jsonify({"Error": "nena pero dame info"}), 400
 
-    username = request.form.get('username')
-    password_hash = request.form.get('password_hash')
+    # Required fields
+    trigger = data.get('trigger')
+    autoresponse = data.get('autoresponse')
+    if not trigger or not autoresponse:
+        return jsonify({"Error": "nena pero dime a que responder"}), 400
 
-    if username not in accs or accs[username] != password_hash:
-        return jsonify({"Error": "This is not for you :P"}), 401
+    # Save to database
+    try:
+        idTrigger = create_trigger(trigger)
+        idResponse = create_response(autoresponse)
+        create_combo(idTrigger, idResponse)
+    except Exception as e:
+        print("Error saving to database:", e)
+        return jsonify({"Error": "Failed to save to database"}), 500
 
-    if 'file' not in request.files:
-        return jsonify({"Error":"No file included?? Amateur hour??"}), 415
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"Error":"No file name included?? HOW??"}), 415
-    if file:
-        print("Saving to:", autoresponse_path)
-        final_path = os.path.join(autoresponse_path, file.filename)
-        print("Final path:", final_path)
-        if(io_helper.write_file(os.path.join(autoresponse_path, file.filename), file) == 0):
-            return({"OK":"Wait up to 30 seconds for it to show up"}, 200)
-        else:
-            return jsonify({"Error":"Whoopsie daisy"}), 500
+    return jsonify({"Success": "omg cafecito lo hiciste!"}), 200
 
+
+@app.route('/autoresponse', methods=['GET'])
+@requires_auth
+def get_all_combos_route():
+    return jsonify(get_combos()), 200
+
+
+@app.route('/autoresponse/<trigger>', methods=['GET'])
+@requires_auth
+def get_combos_by_trigger_route(trigger):
+    combo = get_combos(trigger_content=trigger)
+
+    if combo:
+        return jsonify(combo), 200
+    else:
+        return jsonify({"error": "Trigger not found"}), 404
+    
+@app.route('/autoresponse/delete', methods=['POST'])
+@requires_auth
+def delete_combo_route():
+    data = request.get_json()
+    trigger = data.get('trigger')
+    response = data.get('response')
+    if not trigger or not response:
+        return jsonify({"error": "No trigger or response provided"}), 400
+
+    try:
+        delete_combo(trigger, response)
+        return jsonify({"message": "Combo deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to delete combo: {str(e)}"}), 500
+    
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password_hash = data.get('password_hash')
+    if not username or not password_hash:
+        return jsonify({"error": "No username or password_hash provided"}), 400
+    # Authenticate credentials
+    if not check_auth(username, password_hash):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    # Create JWT
+    try:
+        now = datetime.datetime.utcnow()
+        exp = now + datetime.timedelta(hours=12)
+        payload = {
+            'sub': username,
+            'iat': now,
+            'exp': exp
+        }
+        token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+        return jsonify({"access_token": token, "token_type": "bearer", "expires_at": exp.isoformat() + 'Z'}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to create token: {str(e)}"}), 500
+    
+@app.route('/check_token' , methods=['GET'])
+def auth():
+    token = request.headers.get('Authorization', '').split('Bearer ')[-1].strip()
+    if not token:
+        return jsonify({"error": "No token provided"}), 400
+
+    try:
+        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        username = payload.get('sub')
+        if not username:
+            return jsonify({"error": "Invalid token"}), 401
+        return jsonify({"valid": True}), 200
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expired"}), 401
+    except Exception as e:
+        return jsonify({"error": f"Failed to authenticate token: {str(e)}"}), 500
+    
+@app.route('/', methods=['GET'])
+def index():
+    return send_from_directory(os.path.join(PROJECT_ROOT, 'view'), 'index.html')
+
+# Serve static files (JS, CSS, images)
+@app.route('/<path:filename>')
+def static_files(filename):
+    return send_from_directory(os.path.join(PROJECT_ROOT, 'view'), filename)
+    
+
+def check_auth(username, password_hash):
+    return authenticate(username, password_hash)
 
 def run_api():
-    app.run(port=5000, debug=True, use_reloader=False)
+    app.run(port=5000, debug=False, use_reloader=True)
+

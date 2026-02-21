@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bot telekil</title>
+</head>
+<body>
+    
+    <h1>Bot Telekil</h1>
+    <p>Irati por favor no pongas cosas de furrys</p>
+    <p style= "color: red">Es bromi, eres libre, ya lo decía el michael laboa</p>
+    <div style="display: block;" id="urkullu">
+        <h1> Urkullupitxon identifícate</h1>
+        <form id="login-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password">
+            <button type="submit">por cada login, +10 puntos de nerd</button>
+            <img src = "nerd.gif" alt="Nerd" width="100px" height="100px">
+        </form>
+    </div>
+    
+    <div id="main-content" style="display: none;">
+    <button id ="logout">get me out of here</button>
+    <img src="angery-admin.png" style="width: 200px;"></img>
+        <form id="autoresponse-form">
+            <label for="trigger">Mensajite:</label>
+            <input type="text" id="trigger" name="trigger">
+            <label for="autoresponse">Respueste:</label>
+            <input type="text" id="autoresponse" name="autoresponse">
+            <button type="submit">Bidali</button>
+        </form>
+
+    <div>
+        <h2>Respuestas disponibles</h2>
+        <ul id="combos"></ul>
+            
+
+    </div>
+    </div>
+   
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/core.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/md5.js"></script>
+<script>
+    const token = localStorage.getItem("token-telekapp") || null;
+    const apiUrl = "http://127.0.0.1:5000/";
+(async function init() {
+  
+
+    if (await checkToken(token)) {
+        await getCombos(token);
+
+        document.getElementById("logout").addEventListener("click", async function(event) {
+            localStorage.removeItem("token-telekapp");
+            event.preventDefault();
+            window.location.reload();
+        });
+
+        document.getElementById("autoresponse-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const trigger = document.querySelector("#trigger").value;
+            const autoresponse = document.querySelector("#autoresponse").value;
+
+            try {
+                const response = await fetch(apiUrl + "discordbotapi", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        trigger: trigger,
+                        autoresponse: autoresponse
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+                console.log("Created combo:", data);
+                window.location.reload();
+
+            } catch (error) {
+                console.error("Error creating combo:", error);
+            }
+        });
+
+    } else {
+        document.getElementById("login-form").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            await login();
+        });
+    }
+})();
+     
+    
+async function checkToken(token) {
+    const mainContent = document.getElementById("main-content");
+    const urkullu = document.getElementById("urkullu");
+
+    if (!token) {
+        mainContent.style.display = "none";
+        urkullu.style.display = "block";
+        return false;
+    }
+
+    try {
+        const response = await fetch(apiUrl + "check_token", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.valid) {
+            mainContent.style.display = "block";
+            urkullu.style.display = "none";
+            return true;
+        } else {
+            mainContent.style.display = "none";
+            urkullu.style.display = "block";
+            return false;
+        }
+
+    } catch (error) {
+        console.error(error);
+        mainContent.style.display = "none";
+        urkullu.style.display = "block";
+        return false;
+    }
+}
+
+
+
+
+// Fetch and display combos
+async function getCombos(token) {
+    const combos = document.getElementById("combos");
+
+    try {
+        const response = await fetch(apiUrl + "autoresponse", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        combos.innerHTML = "";
+        data.forEach(combo => {
+            const p = document.createElement("p");
+            p.style.fontWeight = "bold";
+            p.innerText = combo.trigger;
+            combos.appendChild(p);
+            combo.responses.forEach(response => {
+                 const li = document.createElement("li");
+                // if response is a file, display it as an image
+                if (response.endsWith(".png") || response.endsWith(".jpg") || response.endsWith(".jpeg") || response.startsWith("http") || response.endsWith(".gif") || response.endsWith(".mp4"))  {
+                    const img = document.createElement("img");
+                    img.src = response;
+                    img.alt = response;
+                    li.appendChild(img);
+                    combos.appendChild(li);
+                } else {
+                   
+                    li.style.fontStyle = "italic";
+                    li.style.textIndent = "1em";
+                    li.innerText = response;
+                    combos.appendChild(li);
+                
+                }
+            });
+           
+           
+        });
+
+    } catch (error) {
+        console.error("Error fetching combos:", error);
+        combos.innerHTML = "<li>Failed to load combos</li>";
+    }
+}
+
+// Login function
+async function login() {
+    const username = document.querySelector("#username").value;
+    const password = document.querySelector("#password").value;
+    const password_hash = CryptoJS.MD5(password).toString();
+
+    try {
+        const response = await fetch(apiUrl + "/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username: username,
+                password_hash: password_hash
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Login failed! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        console.log("Login response:", data);
+        // Save token to localStorage
+        localStorage.setItem("token-telekapp", data.access_token);
+
+        // Reload the page after login
+        window.location.reload();
+
+    } catch (error) {
+        console.error("Error during login:", error);
+        alert("Login failed, please check your credentials.");
+    }
+}
+</script>
+</html>
