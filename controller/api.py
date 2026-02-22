@@ -76,7 +76,7 @@ def discord_bot_api():
         return jsonify({"Error": "nena pero dame info"}), 400
 
     # Required fields
-    trigger = data.get('trigger')
+    trigger = data.get('trigger').lower()
     autoresponse = data.get('autoresponse')
     if not trigger or not autoresponse:
         return jsonify({"Error": "nena pero dime a que responder"}), 400
@@ -175,6 +175,18 @@ def index():
 def static_files(filename):
     return send_from_directory(os.path.join(PROJECT_ROOT, 'view'), filename)
     
+@app.route('/register', methods=['POST'])
+@requires_auth
+def  register():
+    data = request.get_json()
+    username = data.get('username_reg')
+    password_hash = data.get('password_hash_reg')
+    try:
+        new_user(username, password_hash)
+        return jsonify({"message": "User registered successfully"}), 200
+    except Exception as e:
+        return jsonify({"error":f"ha ocurrido un extraño suseso"}), 500
+
 
 def check_auth(username, password_hash):
     return authenticate(username, password_hash)

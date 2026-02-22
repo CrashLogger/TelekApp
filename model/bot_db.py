@@ -48,9 +48,30 @@ def get_combos(trigger_content=None):
 
     return list(result.values())
 
+def get_trigger(trigger_content):
+    """Wildcard (tarjeta salvaje RAWR)"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    query = """
+        SELECT *
+        FROM trigger
+        WHERE INSTR(LOWER(?), LOWER(content)) > 0
+        ORDER BY LENGTH(content) DESC
+        LIMIT 1;
+    """
+    c.execute(query, (trigger_content,))
+    row = c.fetchone()
+    conn.close()
+    return row
 
 def get_random_response(trigger_content):
-    combo = get_combos(trigger_content)
-    if combo and combo["responses"]:
-        return random.choice(combo["responses"])
+    match = get_trigger(trigger_content)
+    if match:
+        combo = get_combos(match)
+        if combo and combo["responses"]:
+            return random.choice(combo["responses"])
+        return None
     return None

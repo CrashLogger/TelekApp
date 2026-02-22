@@ -4,8 +4,6 @@ from controller.bot import run_bot
 
 if __name__ == '__main__':
    
-   
-
     # Start Flask API in a separate thread
     
     api_thread = Thread(target=run_api)
@@ -14,4 +12,6 @@ if __name__ == '__main__':
 
     # Start Discord bot in the main thread
     run_bot()
+
+
     
