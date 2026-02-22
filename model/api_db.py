@@ -129,3 +129,14 @@ def authenticate(username, password_hash):
     if row:
         return True
     return None
+
+
+def new_user(username, password_hash):
+    db = get_db()
+    c = db.cursor()
+    c.execute(
+        "INSERT INTO user (username, password_hash) VALUES (?, ?)",
+        (username, password_hash)
+    )
+    db.commit()
+    return c.lastrowid

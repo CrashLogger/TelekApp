@@ -21,7 +21,7 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    content = message.content.strip()
+    content = message.content.strip().lower()
 
     # Debug: list all triggers
     if content == "debug triggers":

@@ -4,6 +4,157 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>bot telekil</title>
+    <style>
+
+
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+
+body {
+    margin: 0;
+    font-family: "Comic Neue", cursive;
+    background: linear-gradient(to bottom, #ffb6c1, #ffe4e1);
+    text-align: center;
+    color: #5a004f;
+}
+
+/* HEADINGS */
+
+h1 {
+    font-size: 2.5rem;
+    color: #ff1493;
+    text-shadow: 2px 2px 0 #ffd700;
+    margin-top: 1.5rem;
+    animation: bounce 1s ease-in-out infinite alternate;
+}
+@keyframes bounce {
+    from { transform: rotate(-2deg) scale(1); }
+    to { transform: rotate(2deg) scale(1.1); }
+}
+
+h2 {
+    color: #ff69b4;
+    text-shadow: 1px 1px 0 white;
+}
+
+/* PANELS */
+
+#combos { 
+    text-align: left;
+}
+
+
+#urkullu,
+#main-content {
+    margin: 2rem auto;
+    padding: 2rem;
+    width: 80%;
+    background: #fff0f5;
+    border: 4px dashed #ff69b4;
+    border-radius: 20px;
+}
+
+/* LABELS */
+
+label {
+    font-weight: bold;
+    color: #c71585;
+}
+
+/* INPUTS */
+
+input {
+    padding: 0.5rem;
+    border-radius: 12px;
+    border: 2px solid #ff69b4;
+    background: white;
+    margin: 0.3rem 0;
+    transition: 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: #ff1493;
+    background: #fffafa;
+}
+
+/* BUTTONS */
+
+button {
+    margin-top: 1rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    background: linear-gradient(to bottom, #ffb6c1, #ff69b4);
+    border: 2px solid #c71585;
+    border-radius: 25px;
+    cursor: pointer;
+    color: white;
+    animation: wiggle 0.6s infinite alternate;
+    transition: 0.2s ease;
+}
+
+@keyframes wiggle {
+    from { transform: rotate(-2deg); }
+    to { transform: rotate(2deg); }
+}
+
+button:hover {
+    background: linear-gradient(to bottom, #ff69b4, #ff1493);
+}
+
+/* LOGOUT BUTTON */
+
+#logout {
+    background: linear-gradient(to bottom, #444, #aa0000);
+    border-color: #660000;
+}
+
+/* COMBOS LIST */
+
+#combos {
+    list-style: "💖👄🍓 ";
+    padding: 0;
+}
+
+#combos li {
+    background: #ffe4ec;
+    margin: 0.4rem auto;
+    padding: 0.4rem;
+    width: 60%;
+    border-radius: 15px;
+    border: 2px dotted #ff69b4;
+}
+
+/* IMAGES */
+
+/* IMAGES — dramatic but not nauseating */
+
+img {
+    margin-top: 1rem;
+    border-radius: 20px;
+    border: 3px solid #ff69b4;
+    max-width: 200px;
+    transition: transform 0.3s ease;
+}
+
+/* slow, dignified spin */
+@keyframes elegantSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* only spin the nerd gif automatically */
+img[src*="nerd"] {
+    animation: elegantSpin 8s linear infinite;
+}
+
+/* other images spin only on hover */
+img:hover {
+    animation: elegantSpin 2s linear infinite;
+}
+
+
+    </style>
 </head>
 <body>
     
@@ -11,19 +162,19 @@
     <p>Irati por favor no pongas cosas de furrys</p>
     <p style= "color: red">Es bromi, eres libre, ya lo decía el michael laboa</p>
     <div style="display: block;" id="urkullu">
-        <h1> Urkullupitxon identifícate</h1>
+        <h1 id = "pitxon"> Urkullupitxon, identifícate</h1>
         <form id="login-form">
             <label for="username">Username:</label>
             <input type="text" id="username" name="username">
             <label for="password">Password:</label>
             <input type="password" id="password" name="password">
-            <button type="submit">por cada login, +10 puntos de nerd</button>
+            <button id="nerd" type="submit">por cada login, +10 puntos de nerd</button>
             <img src = "nerd.gif" alt="Nerd" width="100px" height="100px">
         </form>
     </div>
     
     <div id="main-content" style="display: none;">
-    <button id ="logout">get me out of here</button>
+    <button id ="logout">get me out of here</button><button id="register">new erabiltzaile</button>
     <img src="angery-admin.png" style="width: 200px;"></img>
         <form id="autoresponse-form">
             <label for="trigger">Mensajite:</label>
@@ -46,7 +197,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/md5.js"></script>
 <script>
     const token = localStorage.getItem("token-telekapp") || null;
-    const apiUrl =  "http://127.0.0.1:5000/";
+    const apiUrl =  window.location.origin + "/";
 (async function init() {
   
 
@@ -95,7 +246,61 @@
         });
     }
 })();
-     
+    
+document.getElementById("register").addEventListener("click", async function(event) {
+    // erakutsi login form-a, baina ez egin submit-etik login, baizik eta register funtzioa exekutatu
+    document.getElementById("login-form").style.display = "block";
+    document.getElementById("register").style.display = "none";
+    document.getElementById("main-content").style.display = "none";
+    document.getElementById("urkullu").style.display = "block";
+    document.getElementById("nerd").innerText = "registra a otro nerd";
+    document.getElementById("pitxon").innerText = "Urkullupitxon, registra a otro nerd";
+    document.getElementById("login-form").removeEventListener("submit", login);
+    
+    document.getElementById("login-form").addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+       
+        await register();
+       
+    });
+   
+});
+
+async function register(){
+    const username = document.querySelector("#username").value;
+    const password = document.querySelector("#password").value;
+    const password_hash = CryptoJS.MD5(password).toString();
+
+    try {
+        const response = await fetch(apiUrl + "register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                username_reg: username,
+                password_hash_reg: password_hash
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Login failed! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        localStorage.removeItem("token-telekapp");
+        window.location.reload();
+
+    }
+    catch (error) {
+       alert("Error registrando, sorry xxxxxxxxxxxxxxxxxxxxxxxxxxx");
+       
+    }
+}
+
     
 async function checkToken(token) {
     const mainContent = document.getElementById("main-content");
@@ -110,6 +315,7 @@ async function checkToken(token) {
     try {
         const response = await fetch(apiUrl + "check_token", {
             headers: {
+                "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`
             }
         });
@@ -194,6 +400,7 @@ async function getCombos(token) {
 
 // Login function
 async function login() {
+    console.log("Attempting login...");
     const username = document.querySelector("#username").value;
     const password = document.querySelector("#password").value;
     const password_hash = CryptoJS.MD5(password).toString();
