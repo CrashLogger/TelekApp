@@ -114,12 +114,15 @@ def delete_combo_route():
     trigger = data.get('trigger')
     response = data.get('response')
     if not trigger or not response:
+        print("Nothing")
         return jsonify({"error": "No trigger or response provided"}), 400
 
     try:
         delete_combo(trigger, response)
+        print("OK")
         return jsonify({"message": "Combo deleted successfully"}), 200
     except Exception as e:
+        print("COCK")
         return jsonify({"error": f"Failed to delete combo: {str(e)}"}), 500
     
 @app.route('/TelekApp/login', methods=['POST'])

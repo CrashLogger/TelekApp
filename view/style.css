@@ -1,11 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
+
+html{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     margin: 0;
     font-family: "Comic Neue", cursive;
     background: linear-gradient(to bottom, #ffb6c1, #ffe4e1);
     text-align: center;
+    background-attachment: fixed; /* Ensures gradient covers the entire viewport */
+    min-height: 100vh; /* Fallback for older browsers */
     color: #5a004f;
+    display: flex;
+    flex-direction: column;
 }
 
 /* HEADINGS */
@@ -107,14 +118,70 @@ button:hover {
     padding: 0;
 }
 
+/* Combo list items */
 #combos li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Pushes children to opposite ends */
+    gap: 10px;
     background: #ffe4ec;
     margin: 0.4rem auto;
     padding: 0.4rem;
     width: 60%;
     border-radius: 15px;
     border: 2px dotted #ff69b4;
+    list-style: "💖👄🍓 ";
 }
+
+/* Response text or image container */
+.response-container {
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Takes up remaining space */
+    gap: 10px;
+}
+
+/* Response text styling */
+.response-text {
+    font-style: italic;
+    text-indent: 1em;
+    flex-grow: 1;
+}
+
+/* Delete button styling */
+.delete-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: bold;
+    background: linear-gradient(to bottom, #ff6b6b, #ff0000);
+    border: 2px solid #c70000;
+    border-radius: 15px;
+    cursor: pointer;
+    color: white;
+    transition: 0.2s ease;
+    animation: pulse 1.5s infinite;
+    margin-left: auto; /* Pushes the button to the right */
+    white-space: nowrap; /* Prevents button text from wrapping */
+}
+
+.delete-btn:hover {
+    background: linear-gradient(to bottom, #ff0000, #cc0000);
+    transform: scale(1.05);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+/* Image styling inside responses */
+#combos img {
+    max-width: 200px;
+    border-radius: 10px;
+    border: 2px solid #ff69b4;
+}
+
 
 /* IMAGES */
 

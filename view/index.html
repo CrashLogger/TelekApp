@@ -220,24 +220,59 @@ async function getCombos(token) {
             p.style.fontWeight = "bold";
             p.innerText = combo.trigger;
             combos.appendChild(p);
-            combo.responses.forEach(response => {
-                 const li = document.createElement("li");
-                // if response is a file, display it as an image
-                if (response.endsWith(".png") || response.endsWith(".jpg") || response.endsWith(".jpeg") || response.startsWith("http") || response.endsWith(".gif") || response.endsWith(".mp4"))  {
-                    const img = document.createElement("img");
-                    img.src = response;
-                    img.alt = response;
-                    li.appendChild(img);
-                    combos.appendChild(li);
-                } else {
-                   
-                    li.style.fontStyle = "italic";
-                    li.style.textIndent = "1em";
-                    li.innerText = response;
-                    combos.appendChild(li);
-                
-                }
+combo.responses.forEach(response => {
+    const li = document.createElement("li");
+
+    // Display the response (image or text)
+    if (response.endsWith(".png") || response.endsWith(".jpg") || response.endsWith(".jpeg") || response.startsWith("http") || response.endsWith(".gif") || response.endsWith(".mp4")) {
+        const img = document.createElement("img");
+        img.src = response;
+        img.alt = response;
+        img.style.maxWidth = "200px";
+        li.appendChild(img);
+    } else {
+        const span = document.createElement("span");
+        span.className = "response-text";
+        span.innerText = response;
+        li.appendChild(span);
+    }
+
+    // Add delete button
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "delete-btn";
+    deleteButton.innerText = "💥 Suntsiketa 🗑️";
+
+
+    // Add click event to delete button
+    deleteButton.addEventListener("click", async () => {
+        try {
+            const deleteResponse = await fetch(apiUrl + "autoresponse/delete", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    trigger: combo.trigger,
+                    response: response
+                })
             });
+
+            if (!deleteResponse.ok) {
+                throw new Error(`Failed to delete response! status: ${deleteResponse.status}`);
+            }
+
+            // Refresh the combos list
+            await getCombos(token);
+        } catch (error) {
+            console.error("Error deleting response:", error);
+            alert("Failed to delete response.");
+        }
+    });
+
+    li.appendChild(deleteButton);
+    combos.appendChild(li);
+});
            
            
         });
@@ -286,5 +321,6 @@ async function login() {
         alert("Login failed, please check your credentials.");
     }
 }
+
 </script>
 </html>
