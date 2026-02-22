@@ -68,7 +68,7 @@ def requires_auth(f):
         return f(*args, **kwargs)
     return decorated
 
-@app.route('/discordbotapi', methods=['POST'])
+@app.route('/TelekApp/discordbotapi', methods=['POST'])
 @requires_auth
 def discord_bot_api():
     data = request.get_json()
@@ -92,12 +92,12 @@ def discord_bot_api():
 
     return jsonify({"Success": "omg cafecito lo hiciste!"}), 200
 
-@app.route('/autoresponse', methods=['GET'])
+@app.route('/TelekApp/autoresponse', methods=['GET'])
 @requires_auth
 def get_all_combos_route():
     return jsonify(get_combos()), 200
 
-@app.route('/autoresponse/<trigger>', methods=['GET'])
+@app.route('/TelekApp/autoresponse/<trigger>', methods=['GET'])
 @requires_auth
 def get_combos_by_trigger_route(trigger):
     combo = get_combos(trigger_content=trigger)
@@ -107,7 +107,7 @@ def get_combos_by_trigger_route(trigger):
     else:
         return jsonify({"error": "Trigger not found"}), 404
     
-@app.route('/autoresponse/delete', methods=['POST'])
+@app.route('/TelekApp/autoresponse/delete', methods=['POST'])
 @requires_auth
 def delete_combo_route():
     data = request.get_json()
@@ -122,7 +122,7 @@ def delete_combo_route():
     except Exception as e:
         return jsonify({"error": f"Failed to delete combo: {str(e)}"}), 500
     
-@app.route('/login', methods=['POST'])
+@app.route('/TelekApp/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
@@ -149,7 +149,7 @@ def login():
     except Exception as e:
         return jsonify({"error": f"Failed to create token: {str(e)}"}), 500
     
-@app.route('/check_token' , methods=['GET'])
+@app.route('/TelekApp/check_token' , methods=['GET'])
 def auth():
     token = request.headers.get('Authorization', '').split('Bearer ')[-1].strip()
     if not token:
@@ -166,16 +166,16 @@ def auth():
     except Exception as e:
         return jsonify({"error": f"Failed to authenticate token: {str(e)}"}), 500
     
-@app.route('/', methods=['GET'])
+@app.route('/TelekApp/', methods=['GET'])
 def index():
     return send_from_directory(os.path.join(PROJECT_ROOT, 'view'), 'index.html')
 
 # Serve static files (JS, CSS, images)
-@app.route('/<path:filename>')
+@app.route('/TelekApp/<path:filename>')
 def static_files(filename):
     return send_from_directory(os.path.join(PROJECT_ROOT, 'view'), filename)
     
-@app.route('/register', methods=['POST'])
+@app.route('/TelekApp/register', methods=['POST'])
 @requires_auth
 def  register():
     data = request.get_json()

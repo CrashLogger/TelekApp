@@ -47,7 +47,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/md5.js"></script>
 <script>
     const token = localStorage.getItem("token-telekapp") || null;
-    const apiUrl =  window.location.origin + "/";
+    const apiUrl =  window.location.origin + "/TelekApp/";
 (async function init() {
   
 
@@ -266,6 +266,7 @@ async function login() {
                 password_hash: password_hash
             })
         });
+        console.log(apiUrl + "login");
 
         if (!response.ok) {
             throw new Error(`Login failed! status: ${response.status}`);
