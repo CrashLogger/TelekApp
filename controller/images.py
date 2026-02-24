@@ -3,9 +3,13 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from typing import List 
 import textwrap
+import hashlib
+import os
 
 def imageWork(image_template_name: str, caption: str, startcorner: List[int], endcorner: List[int], font: str = "FreeMono"):
     # Open an Image
+    os.makedirs("image-templates", exist_ok=True)
+    os.makedirs("image-templates/tmp", exist_ok=True)
     img = Image.open(f'image-templates/{image_template_name}.png')
 
     # Call draw Method to add 2D graphics in an image
@@ -19,7 +23,7 @@ def imageWork(image_template_name: str, caption: str, startcorner: List[int], en
 
 # Calculate max characters per line based on rectangle width
     # This is a rough estimate; you may need to adjust it
-    avg_char_width = font_size * 0.2  # Approximate average character width
+    avg_char_width = font_size * 0.45  # Approximate average character width
     max_chars_per_line = int(rect_width / avg_char_width)
 
     # Wrap the text to fit within the rectangle's width
@@ -40,5 +44,12 @@ def imageWork(image_template_name: str, caption: str, startcorner: List[int], en
         I1.text((10, y_text), line, font=myFont, fill=font_color)
         y_text += font_size  # Move down for the next line
 
+    # Textos demasiado largos rompen el guardado
+    max_filename_length = 64
+    truncated_caption = caption[:max_filename_length].replace(" ", "_")
+
     # Save the edited image
-    img.save(f"image-templates/tmp/{image_template_name}CAP{caption}.png")
+    # We use the first 10 digits in the hash to keep track of exact images for funsies
+    imagehash = hashlib.md5(caption.encode()).hexdigest()[:10]
+    img.save(f"image-templates/tmp/{image_template_name}-{imagehash}.png")
+    return imagehash
