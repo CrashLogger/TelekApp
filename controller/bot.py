@@ -46,10 +46,12 @@ async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f'Hi, {interaction.user.mention}')
 
 @bot.tree.command()
-async def template(interaction: discord.Interaction, message: str):
+async def template(interaction: discord.Interaction, image_name:str, caption: str):
     # Edita una imagen con una caption
-    images.imageWork()
-    await interaction.response.send_message(f'Hola tonto ({interaction.user.mention}), me has dicho: {message}')
+    images.imageWork(image_template_name=image_name, caption=caption, startcorner=[10,10], endcorner=[100, 100])
+    file_path = f'image-templates/tmp/{image_name}CAP{caption}.png'
+    file = discord.File(file_path, filename=f"{image_name}CAP{caption}.png")
+    await interaction.response.send_message(file=file)
 
 
 @bot.event
