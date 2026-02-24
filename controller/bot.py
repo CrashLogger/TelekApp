@@ -3,7 +3,7 @@ import discord
 from discord import app_commands
 from dotenv import load_dotenv
 from model.bot_db import get_random_response, get_combos
-from controller import images
+from controller.images import TemplateWorker
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -46,11 +46,13 @@ async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f'Hi, {interaction.user.mention}')
 
 @bot.tree.command()
-async def template(interaction: discord.Interaction, image_name:str, caption: str):
+async def template(interaction: discord.Interaction, image_template_name:str, caption: str, font:str = None, ):
     # Edita una imagen con una caption
-    imagehash = images.imageWork(image_template_name=image_name, caption=caption, startcorner=[10,10], endcorner=[500, 500])
-    file_path = f'image-templates/tmp/{image_name}-{imagehash}.png'
-    file = discord.File(file_path, filename=f"{image_name}-{imagehash}.png")
+    print(f"Image template name:{image_template_name}")
+    imageworker = TemplateWorker(rect_top_left=[5,5], rect_bottom_right=[315, 235], font_path=f"image-templates/fonts/{font}")
+    imagehash = imageworker.imageWork(image_template_name=image_template_name, caption=caption)
+    file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
+    file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
     await interaction.response.send_message(file=file)
 
 

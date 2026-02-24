@@ -1,55 +1,90 @@
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
-from typing import List 
+from PIL import Image, ImageDraw, ImageFont
 import textwrap
-import hashlib
 import os
+import hashlib
+from typing import List, Tuple
 
-def imageWork(image_template_name: str, caption: str, startcorner: List[int], endcorner: List[int], font: str = "FreeMono"):
-    # Open an Image
-    os.makedirs("image-templates", exist_ok=True)
-    os.makedirs("image-templates/tmp", exist_ok=True)
-    img = Image.open(f'image-templates/{image_template_name}.png')
+class TemplateWorker:
+    def __init__(
+        self,
+        rect_top_left: List[int] = [10, 10],
+        rect_bottom_right: List[int] = [500, 300],
+        font_path: str = 'FreeMono.ttf',
+        font_size: int = 65,
+        font_color: Tuple[int, int, int] = (255, 0, 0)
+    ):
+        self.rect_top_left = rect_top_left
+        self.rect_bottom_right = rect_bottom_right
+        self.font_path = font_path
+        self.font_size = font_size
+        self.font_color = font_color
+        self.I1 = None
 
-    # Call draw Method to add 2D graphics in an image
-    I1 = ImageDraw.Draw(img)
+    def imageWork(self, image_template_name: str, caption: str):
+        print(f"Image template name: {image_template_name}")
 
-    # Custom font style and font size
-    font_size = 24
-    myFont = ImageFont.truetype(f'image-templates/fonts/{font}.ttf', font_size)
+        # Open an Image
+        img = Image.open(f'image-templates/{image_template_name}.png')
 
-    rect_width = endcorner[0] - startcorner[0]
+        # Call draw Method to add 2D graphics in an image
+        self.I1 = ImageDraw.Draw(img)
 
-# Calculate max characters per line based on rectangle width
-    # This is a rough estimate; you may need to adjust it
-    avg_char_width = font_size * 0.45  # Approximate average character width
-    max_chars_per_line = int(rect_width / avg_char_width)
+        # Calculate rectangle dimensions
+        rect_width = self.rect_bottom_right[0] - self.rect_top_left[0]
+        rect_height = self.rect_bottom_right[1] - self.rect_top_left[1]
 
-    # Wrap the text to fit within the rectangle's width
-    wrapped_text = textwrap.fill(caption, width=max_chars_per_line)
+        # Load font
+        try:
+            myFont = ImageFont.truetype(self.font_path, self.font_size)
+        except IOError:
+            myFont = ImageFont.load_default()
 
-    # Split the wrapped text into lines
-    lines = wrapped_text.split('\n')
+        # Wrapping text horizontally
+        lines, total_text_height, line_height = self.wrap_text_to_fit(caption, myFont, rect_width, rect_height)
 
-    # Calculate the total height required for the text
-    line_height = font_size * 0.6  # Approximate line height
-    total_text_height = len(lines) * line_height
+        # Adjust font size until text fits vertically
+        while total_text_height > rect_height and self.font_size > 10:
+            self.font_size -= 1
+            myFont = ImageFont.truetype(self.font_path, self.font_size)
+            lines, total_text_height, line_height = self.wrap_text_to_fit(caption, myFont, rect_width, rect_height)
 
-    y_text = 10
-    font_color = "#00FFFF"
-    max_lines = 10
+        # Center the text in the rectangle
+        y_text = self.rect_top_left[1] + (rect_height - total_text_height) // 2
 
-    for line in lines[:max_lines]:  # Limit the number of lines to prevent overflow
-        I1.text((10, y_text), line, font=myFont, fill=font_color)
-        y_text += font_size  # Move down for the next line
+        # Draw each line of text
+        for line in lines:
+            text_width, _ = self.get_text_dimensions(line, myFont)
+            x_text = self.rect_top_left[0] + (rect_width - text_width) // 2
+            self.I1.text((x_text, y_text), line, font=myFont, fill=self.font_color)
+            y_text += line_height
 
-    # Textos demasiado largos rompen el guardado
-    max_filename_length = 64
-    truncated_caption = caption[:max_filename_length].replace(" ", "_")
+        # Ensure the tmp directory exists
+        os.makedirs("image-templates/tmp", exist_ok=True)
 
-    # Save the edited image
-    # We use the first 10 digits in the hash to keep track of exact images for funsies
-    imagehash = hashlib.md5(caption.encode()).hexdigest()[:10]
-    img.save(f"image-templates/tmp/{image_template_name}-{imagehash}.png")
-    return imagehash
+        # Generate a unique filename using a hash
+        unique_id = hashlib.md5(caption.encode()).hexdigest()[:10]
+
+        # Save the edited image with a unique filename
+        img.save(f"image-templates/tmp/{image_template_name}-{unique_id}.png")
+
+        return unique_id
+
+    def get_text_dimensions(self, text, font):
+        # Use textbbox for more accurate measurements
+        bbox = self.I1.textbbox((0, 0), text, font=font)
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+        return width, height
+
+    def wrap_text_to_fit(self, text, font, max_width, max_height):
+        # Wrap the text to fit within max_width
+        avg_char_width = self.get_text_dimensions("W", font)[0]  # Approximate average character width
+        max_chars_per_line = max(1, int(max_width / avg_char_width))
+        wrapped_text = textwrap.fill(text, width=max_chars_per_line)
+        lines = wrapped_text.split('\n')
+
+        # Calculate total height of the wrapped text
+        line_height = self.get_text_dimensions("Ag", font)[1]  # Approximate line height
+        total_text_height = len(lines) * line_height
+
+        return lines, total_text_height, line_height
