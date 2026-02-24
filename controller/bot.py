@@ -3,6 +3,7 @@ import discord
 from discord import app_commands
 from dotenv import load_dotenv
 from model.bot_db import get_random_response, get_combos
+from model import misc
 from controller.images import TemplateWorker
 
 load_dotenv()
@@ -38,7 +39,7 @@ bot = TelekApp(intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f"Que pasa crack, {bot.user}")
+    print(f"Eyyyyy ey ey aaaaaqui {bot.user} v{misc.VERSION} eeeeeeen Discord")
 
 @bot.tree.command()
 async def hello(interaction: discord.Interaction):
@@ -46,15 +47,32 @@ async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f'Hi, {interaction.user.mention}')
 
 @bot.tree.command()
-async def template(interaction: discord.Interaction, image_template_name:str, caption: str, font:str = None, ):
+async def template(interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", ):
     # Edita una imagen con una caption
-    print(f"Image template name:{image_template_name}")
-    imageworker = TemplateWorker(rect_top_left=[5,5], rect_bottom_right=[315, 235], font_path=f"image-templates/fonts/{font}")
+    # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
+    # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
+    imageworker = TemplateWorker(rect_top_left=[10,10], rect_bottom_right=[320, 240], font_path=font)
     imagehash = imageworker.imageWork(image_template_name=image_template_name, caption=caption)
     file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
     file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
     await interaction.response.send_message(file=file)
+    try:
+        os.remove(file_path)
+        print(f"Deleted file: {file_path}")
+    except Exception as e:
+        print(f"Error deleting file {file_path}: {e}")
 
+@bot.tree.command()
+async def links(interaction: discord.Interaction):
+    combos = get_combos()
+    triggers = [combo["trigger"] for combo in combos]
+    await interaction.response.send_message(f"# URLs:\nChange my settings at:\n{misc.URL}\nBugs? Improvements?:\n{misc.ISSUES}")
+
+@bot.tree.command()
+async def triggers(interaction: discord.Interaction):
+    combos = get_combos()
+    triggers = [combo["trigger"] for combo in combos]
+    await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy triggers are:\n```{triggers}```")
 
 @bot.event
 async def on_message(message):

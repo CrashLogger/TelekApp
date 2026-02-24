@@ -60,7 +60,7 @@ def get_trigger(trigger_content):
 
     # NO TOCAR >.>
     query = """
-        SELECT content
+        SELECT *
         FROM trigger
         WHERE LOWER(content) = LOWER(?)
         ORDER BY LENGTH(content) DESC
