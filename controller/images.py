@@ -21,12 +21,14 @@ class TemplateWorker:
         self.font_path = f"image-templates/fonts/{font_name}.ttf"
         print(f"font path {self.font_path}")
         self.font_size = font_size
+
+        # Para convertir las stirng HEX de los colores en 3 valores R, G y B
         self.font_color = tuple(int(font_colour[i:i+2], 16) for i in (0, 2, 4))
+
         self.I1 = None
 
     def imageWork(self, caption: str):
         # Open an Image
-        print("Vamos no me jodas")
         print(self.image_template_name)
         img = Image.open(f'image-templates/{self.image_template_name}.png')
 
@@ -36,10 +38,8 @@ class TemplateWorker:
         # Calculate rectangle dimensions
         rect_width = self.rect_bottom_right[0] - self.rect_top_left[0]
         rect_height = self.rect_bottom_right[1] - self.rect_top_left[1]
-        print(f"Rectangle dimensions: {rect_width}x{rect_height}")
 
         # Load font
-        print(f"LOOKING FOR: {self.font_path}")
         try:
             myFont = ImageFont.truetype(self.font_path, self.font_size)
         except IOError:
@@ -48,21 +48,16 @@ class TemplateWorker:
 
         # Measure actual font height
         _, font_height = self.get_text_dimensions("Ag", myFont)
-        print(f"Font size: {self.font_size}, Actual font height: {font_height} pixels")
 
         # Wrapping text horizontally
         lines, total_text_height, line_height = self.wrap_text_to_fit(caption, myFont, rect_width, rect_height)
-        print(f"Initial total text height: {total_text_height}")
 
         # Adjust font size until text fits vertically
         while total_text_height > rect_height and self.font_size > 10:
             self.font_size -= 1
             myFont = ImageFont.truetype(self.font_path, self.font_size)
             _, font_height = self.get_text_dimensions("Ag", myFont)
-            print(f"Trying font size: {self.font_size}, Actual font height: {font_height} pixels")
             lines, total_text_height, line_height = self.wrap_text_to_fit(caption, myFont, rect_width, rect_height)
-
-        print(f"Final font size: {self.font_size}, Actual font height: {font_height} pixels, Total text height: {total_text_height}")
 
         # Center the text in the rectangle
         y_text = self.rect_top_left[1] + (rect_height - total_text_height) // 2

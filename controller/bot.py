@@ -54,7 +54,6 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
     file = None
     try:
         template_dict = get_template(image_template_name)
-        print(f"Picked up template: {template_dict["templateCommand"]}")
         imageworker = TemplateWorker(
             image_template_name=image_template_name,
             rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
@@ -67,7 +66,7 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
         file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
         file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
     except Exception as e:
-        print("Oh cock")
+        print("Oh cock @ template")
         print(e)
 
     
