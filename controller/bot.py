@@ -47,7 +47,7 @@ async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f'Hi, {interaction.user.mention}')
 
 @bot.tree.command()
-async def template(interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", ):
+async def template(interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", colour:str = None ):
     # Edita una imagen con una caption
     # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
     # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
@@ -58,7 +58,9 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
         imageworker = TemplateWorker(
             image_template_name=image_template_name,
             rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
-            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]]
+            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
+            font_colour=colour if colour else template_dict["defaultTextColour"],
+            font_name=font if font else "Roboto"
         )
         #imageworker = TemplateWorker(rect_top_left=[10,10], rect_bottom_right=[320, 240], font_path=font)
         imagehash = imageworker.imageWork(caption=caption)

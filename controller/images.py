@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import os
 import hashlib
-from typing import List, Tuple
+from typing import List
 
 class TemplateWorker:
     def __init__(
@@ -10,18 +10,18 @@ class TemplateWorker:
         image_template_name: str,
         rect_top_left: List[int] = [10, 10],
         rect_bottom_right: List[int] = [500, 300],
-        font_path: str = 'Roboto',
-        font_size: int = 65,
-        font_color: Tuple[int, int, int] = (255, 0, 0)
+        font_name: str = 'Roboto',
+        font_size: int =200,
+        font_colour: str = 'FFFFFF'
     ):
         self.rect_top_left = rect_top_left
         self.image_template_name = str(image_template_name),
         self.image_template_name = self.image_template_name[0]
         self.rect_bottom_right = rect_bottom_right
-        self.font_path = f"image-templates/fonts/{font_path}.ttf"
+        self.font_path = f"image-templates/fonts/{font_name}.ttf"
         print(f"font path {self.font_path}")
         self.font_size = font_size
-        self.font_color = font_color
+        self.font_color = tuple(int(font_colour[i:i+2], 16) for i in (0, 2, 4))
         self.I1 = None
 
     def imageWork(self, caption: str):
