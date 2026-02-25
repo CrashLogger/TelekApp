@@ -11,18 +11,16 @@ class TemplateWorker:
         rect_top_left: List[int] = [10, 10],
         rect_bottom_right: List[int] = [500, 300],
         font_name: str = 'Roboto',
-        font_size: int =200,
+        font_size: int = 200,
         font_colour: str = 'FFFFFF'
     ):
         self.rect_top_left = rect_top_left
-        self.image_template_name = str(image_template_name),
-        self.image_template_name = self.image_template_name[0]
+        self.image_template_name = str(image_template_name)
         self.rect_bottom_right = rect_bottom_right
         self.font_path = f"image-templates/fonts/{font_name}.ttf"
-        print(f"font path {self.font_path}")
         self.font_size = font_size
 
-        # Para convertir las stirng HEX de los colores en 3 valores R, G y B
+        # Convert HEX color string to RGB tuple
         self.font_color = tuple(int(font_colour[i:i+2], 16) for i in (0, 2, 4))
 
         self.I1 = None
@@ -38,6 +36,11 @@ class TemplateWorker:
         # Calculate rectangle dimensions
         rect_width = self.rect_bottom_right[0] - self.rect_top_left[0]
         rect_height = self.rect_bottom_right[1] - self.rect_top_left[1]
+        
+        # Small padding (Extra aid just in case the same thing that happened before happens again)
+        padding = 5
+        max_text_width = rect_width - (2 * padding)
+        max_text_height = rect_height - (2 * padding)
 
         # Load font
         try:
@@ -46,28 +49,110 @@ class TemplateWorker:
             myFont = ImageFont.load_default()
             print("Using default font")
 
-        # Measure actual font height
-        _, font_height = self.get_text_dimensions("Ag", myFont)
+        # Function to wrap text optimally
+        def get_optimal_wrapping(text, font, max_width):
+            words = text.split()
+            lines = []
+            current_line = []
+            
+            for word in words:
+                # Try adding the next word
+                test_line = ' '.join(current_line + [word])
+                bbox = self.I1.textbbox((0, 0), test_line, font=font)
+                text_width = bbox[2] - bbox[0]
+                
+                if text_width <= max_width:
+                    current_line.append(word)
+                else:
+                    if current_line:  # Save the current line if it's not empty
+                        lines.append(' '.join(current_line))
+                    current_line = [word]
+            
+            # Add the last line
+            if current_line:
+                lines.append(' '.join(current_line))
+            
+            # If no lines were created (single word too long), force split
+            if not lines and words:
+                # Split the word character by character as last resort
+                word = words[0]
+                current_line = ""
+                for char in word:
+                    test_line = current_line + char
+                    bbox = self.I1.textbbox((0, 0), test_line, font=font)
+                    text_width = bbox[2] - bbox[0]
+                    if text_width <= max_width:
+                        current_line = test_line
+                    else:
+                        if current_line:
+                            lines.append(current_line)
+                        current_line = char
+                if current_line:
+                    lines.append(current_line)
+            
+            return lines
 
-        # Wrapping text horizontally
-        lines, total_text_height, line_height = self.wrap_text_to_fit(caption, myFont, rect_width, rect_height)
+        # Function to check if text fits
+        def text_fits(font, lines, max_height):
+            if not lines:
+                return True
+            # Measure total height
+            bbox = self.I1.textbbox((0, 0), "Ag", font=font)
+            line_height = bbox[3] - bbox[1]
+            total_height = len(lines) * line_height
+            return total_height <= max_height
 
-        # Adjust font size until text fits vertically
-        while total_text_height > rect_height and self.font_size > 10:
-            self.font_size -= 1
-            myFont = ImageFont.truetype(self.font_path, self.font_size)
-            _, font_height = self.get_text_dimensions("Ag", myFont)
-            lines, total_text_height, line_height = self.wrap_text_to_fit(caption, myFont, rect_width, rect_height)
+        # Try to find the optimal font size
+        current_font_size = self.font_size
+        best_font = myFont
+        best_lines = []
+        
+        # Don't go below minimum readable size
+        while current_font_size >= 10:
+            try:
+                test_font = ImageFont.truetype(self.font_path, current_font_size)
+            except IOError:
+                test_font = ImageFont.load_default()
+            
+            # Wrap text with this font size
+            lines = get_optimal_wrapping(caption, test_font, max_text_width)
+            
+            # Check if it fits vertically
+            if text_fits(test_font, lines, max_text_height):
+                best_font = test_font
+                best_lines = lines
+                # Break when we've found a working size
+                break
+            else:
+                current_font_size -= 2  # Reduce font size more aggressively
+        
+        # If we never found a fitting size, use the smallest we tried
+        if not best_lines:
+            # Use the smallest font size we tried
+            current_font_size = 10
+            best_font = ImageFont.truetype(self.font_path, current_font_size)
+            best_lines = get_optimal_wrapping(caption, best_font, max_text_width)
 
-        # Center the text in the rectangle
-        y_text = self.rect_top_left[1] + (rect_height - total_text_height) // 2
+        # Calculate line height
+        bbox = self.I1.textbbox((0, 0), "Ag", font=best_font)
+        line_height = bbox[3] - bbox[1]
+        
+        # Calculate total text height
+        total_text_height = len(best_lines) * line_height
+        
+        # Center vertically in the rectangle (with padding considered)
+        y_text = self.rect_top_left[1] + padding + (max_text_height - total_text_height) // 2
 
         # Draw each line of text
-        for line in lines:
-            text_width, _ = self.get_text_dimensions(line, myFont)
-            x_text = self.rect_top_left[0] + (rect_width - text_width) // 2
-            self.I1.text((x_text, y_text), line, font=myFont, fill=self.font_color)
+        for line in best_lines:
+            bbox = self.I1.textbbox((0, 0), line, font=best_font)
+            text_width = bbox[2] - bbox[0]
+            x_text = self.rect_top_left[0] + padding + (max_text_width - text_width) // 2
+            self.I1.text((x_text, y_text), line, font=best_font, fill=self.font_color)
             y_text += line_height
+
+        # DEBUG: rectangle outline
+        # self.I1.rectangle([self.rect_top_left, self.rect_bottom_right], outline="red", width=2)
 
         # Ensure the tmp directory exists
         os.makedirs("image-templates/tmp", exist_ok=True)
@@ -79,29 +164,3 @@ class TemplateWorker:
         img.save(f"image-templates/tmp/{self.image_template_name}-{unique_id}.png")
 
         return unique_id
-
-    def get_text_dimensions(self, text, font):
-        # Use textbbox for more accurate measurements
-        bbox = self.I1.textbbox((0, 0), text, font=font)
-        width = bbox[2] - bbox[0]
-        height = bbox[3] - bbox[1]
-        return width, height
-
-    def wrap_text_to_fit(self, text, font, max_width, max_height):
-        # Measure the width of a typical character to estimate max characters per line
-        avg_char_width, _ = self.get_text_dimensions("W", font)
-        max_chars_per_line = max(1, int(max_width / avg_char_width))
-
-        # Use TextWrapper to avoid splitting words
-        wrapper = textwrap.TextWrapper(width=max_chars_per_line, break_long_words=False, break_on_hyphens=False)
-        wrapped_text = wrapper.fill(text)
-        lines = wrapped_text.split('\n')
-
-        # Measure the height of a line of text
-        _, line_height = self.get_text_dimensions("Ag", font)
-
-        # Calculate total height of the wrapped text
-        total_text_height = len(lines) * line_height
-
-        return lines, total_text_height, line_height
-
