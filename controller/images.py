@@ -7,13 +7,16 @@ from typing import List, Tuple
 class TemplateWorker:
     def __init__(
         self,
+        image_template_name: str,
         rect_top_left: List[int] = [10, 10],
         rect_bottom_right: List[int] = [500, 300],
-        font_path: str = 'Roboto.ttf',
+        font_path: str = 'Roboto',
         font_size: int = 65,
         font_color: Tuple[int, int, int] = (255, 0, 0)
     ):
         self.rect_top_left = rect_top_left
+        self.image_template_name = str(image_template_name),
+        self.image_template_name = self.image_template_name[0]
         self.rect_bottom_right = rect_bottom_right
         self.font_path = f"image-templates/fonts/{font_path}.ttf"
         print(f"font path {self.font_path}")
@@ -21,9 +24,11 @@ class TemplateWorker:
         self.font_color = font_color
         self.I1 = None
 
-    def imageWork(self, image_template_name: str, caption: str):
+    def imageWork(self, caption: str):
         # Open an Image
-        img = Image.open(f'image-templates/{image_template_name}.png')
+        print("Vamos no me jodas")
+        print(self.image_template_name)
+        img = Image.open(f'image-templates/{self.image_template_name}.png')
 
         # Call draw Method to add 2D graphics in an image
         self.I1 = ImageDraw.Draw(img)
@@ -76,7 +81,7 @@ class TemplateWorker:
         unique_id = hashlib.md5(caption.encode()).hexdigest()[:10]
 
         # Save the edited image with a unique filename
-        img.save(f"image-templates/tmp/{image_template_name}-{unique_id}.png")
+        img.save(f"image-templates/tmp/{self.image_template_name}-{unique_id}.png")
 
         return unique_id
 

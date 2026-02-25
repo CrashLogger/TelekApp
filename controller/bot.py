@@ -2,7 +2,7 @@ import os
 import discord
 from discord import app_commands
 from dotenv import load_dotenv
-from model.bot_db import get_random_response, get_combos
+from model.bot_db import get_random_response, get_combos, get_template
 from model import misc
 from controller.images import TemplateWorker
 
@@ -51,11 +51,26 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
     # Edita una imagen con una caption
     # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
     # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
-    imageworker = TemplateWorker(rect_top_left=[10,10], rect_bottom_right=[320, 240], font_path=font)
-    imagehash = imageworker.imageWork(image_template_name=image_template_name, caption=caption)
-    file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
-    file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
+    file = None
+    try:
+        template_dict = get_template(image_template_name)
+        print(f"Picked up template: {template_dict["templateCommand"]}")
+        imageworker = TemplateWorker(
+            image_template_name=image_template_name,
+            rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
+            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]]
+        )
+        #imageworker = TemplateWorker(rect_top_left=[10,10], rect_bottom_right=[320, 240], font_path=font)
+        imagehash = imageworker.imageWork(caption=caption)
+        file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
+        file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
+    except Exception as e:
+        print("Oh cock")
+        print(e)
+
+    
     await interaction.response.send_message(file=file)
+    
     try:
         os.remove(file_path)
         print(f"Deleted file: {file_path}")

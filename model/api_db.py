@@ -1,5 +1,6 @@
 import sqlite3
 from flask import g
+from controller.images import TemplateWorker
 
 DATABASE = "erlantzi_es_un_txapuzas.db"
 
@@ -32,7 +33,7 @@ def close_db(e=None):
 # Query Functions
 # =========================
 
-def get_combos(trigger_content=None):
+def get_combos(trigger_content:str=None):
     db = get_db()
     c = db.cursor()
 
@@ -74,7 +75,6 @@ def get_combos(trigger_content=None):
         return result.get(trigger_content)
     sorted_list = sorted(result.values(), key=lambda x: x['trigger'])
     return list(sorted_list)
-
 
 # =========================
 # Insert Functions
@@ -147,6 +147,9 @@ def delete_combo(trigger_content, response_content):
             print(f"[DEBUG] Combo details: {combo_row}")
     else:
         print("[DEBUG] No trigger or response found. Cannot delete.")
+
+# Para cuando haga la API de meter templates:
+# INSERT INTO templates (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, templateTextBoxBRX, templateTextBoxBRY)  VALUES ('gaming', 'gaming.png', 5, 5, 320, 240)
 
 def delete_combo(trigger_content, response_content):
     db = get_db()

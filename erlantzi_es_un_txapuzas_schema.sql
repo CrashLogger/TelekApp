@@ -50,3 +50,20 @@ CREATE TABLE user (
 
 CREATE INDEX idx_combo_trigger ON combo(idTrigger);
 CREATE INDEX idx_combo_response ON combo(idResponse);
+
+-- =========================
+-- TABLE: templates
+-- =========================
+CREATE TABLE templates (
+    idTemplate          INTEGER PRIMARY KEY AUTOINCREMENT,
+    templateCommand     varchar(255) NOT NULL,
+    templateImageFile   varchar(255) NOT NULL,
+    -- Top Left X
+    templateTextBoxTLX  INTEGER NOT NULL,
+    -- Top Left Y
+    templateTextBoxTLY  INTEGER NOT NULL,
+    -- Bottom Right X
+    templateTextBoxBRX  INTEGER NOT NULL,
+    -- Bottom Right Y
+    templateTextBoxBRY  INTEGER NOT NULL
+);
