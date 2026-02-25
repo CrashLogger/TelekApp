@@ -65,5 +65,6 @@ CREATE TABLE templates (
     -- Bottom Right X
     templateTextBoxBRX  INTEGER NOT NULL,
     -- Bottom Right Y
-    templateTextBoxBRY  INTEGER NOT NULL
+    templateTextBoxBRY  INTEGER NOT NULL,
+    defaultTextColour   varchar(16) NOT NULL
 );

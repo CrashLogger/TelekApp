@@ -149,7 +149,7 @@ def delete_combo(trigger_content, response_content):
         print("[DEBUG] No trigger or response found. Cannot delete.")
 
 # Para cuando haga la API de meter templates:
-# INSERT INTO templates (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, templateTextBoxBRX, templateTextBoxBRY)  VALUES ('gaming', 'gaming.png', 5, 5, 320, 240)
+# INSERT INTO templates (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, templateTextBoxBRX, templateTextBoxBRY, defaultTextColour)  VALUES ('gaming', 'gaming.png', 5, 5, 320, 240, 'FFFFFFFF')
 
 def delete_combo(trigger_content, response_content):
     db = get_db()
