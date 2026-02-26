@@ -109,6 +109,45 @@ def create_combo(trigger_id, response_id):
 # Para cuando haga la API de meter templates:
 # INSERT INTO templates (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, templateTextBoxBRX, templateTextBoxBRY, defaultTextColour)  VALUES ('gaming', 'gaming.png', 5, 5, 320, 240, 'FFFFFFFF')
 
+def create_template(template_data):
+    """
+    Crea una nueva plantilla con los datos del form
+    No sé como subir imagenes o dónde guardarlas aun
+    
+    template_data:
+    - template_command: str (En el comando de discord, el primer argumento: /template [template_command] [caption])
+    - template_image_file: str (e.g., 'gaming.png')
+    - text_box_tl_x: int (top-left X)
+    - text_box_tl_y: int (top-left Y)
+    - text_box_br_x: int (bottom-right X)
+    - text_box_br_y: int (bottom-right Y)
+    - default_text_colour: str (hex)
+    """
+    db = get_db()
+    c = db.cursor()
+    
+    c.execute("""
+        INSERT INTO templates 
+        (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, 
+         templateTextBoxBRX, templateTextBoxBRY, defaultTextColour) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        template_data['template_command'],
+        template_data['template_image_file'],
+        template_data['text_box_tl_x'],
+        template_data['text_box_tl_y'],
+        template_data['text_box_br_x'],
+        template_data['text_box_br_y'],
+        template_data['default_text_colour']
+    ))
+
+    
+    db.commit()
+    return c.lastrowid
+
+
+
+
 # =========================
 # Delete Functions
 # =========================

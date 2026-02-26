@@ -51,32 +51,17 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
     # Edita una imagen con una caption
     # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
     # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
-    file = None
-    try:
-        template_dict = get_template(image_template_name)
-        imageworker = TemplateWorker(
-            image_template_name=image_template_name,
-            rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
-            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
-            font_colour=colour if colour else template_dict["defaultTextColour"],
-            font_name=font if font else "Roboto"
-        )
-        #imageworker = TemplateWorker(rect_top_left=[10,10], rect_bottom_right=[320, 240], font_path=font)
-        imagehash = imageworker.imageWork(caption=caption)
-        file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
-        file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
-    except Exception as e:
-        print("Oh cock @ template")
-        print(e)
-
-    
+    file, file_path = template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font, colour=colour)
     await interaction.response.send_message(file=file)
-    
-    try:
-        os.remove(file_path)
-        print(f"Deleted file: {file_path}")
-    except Exception as e:
-        print(f"Error deleting file {file_path}: {e}")
+    template_cleanup(file_path=file_path)
+
+# Atajo para /sonic
+@bot.tree.command()
+async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
+    file, file_path = template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
+    await interaction.response.send_message(file=file)
+    template_cleanup(file_path=file_path)
+
 
 @bot.tree.command()
 async def links(interaction: discord.Interaction):
@@ -112,3 +97,35 @@ async def on_message(message):
 
 def run_bot():
     bot.run(DISCORD_TOKEN)
+
+def template_generic (interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", colour:str = None ):
+    
+    # Edita una imagen con una caption
+    # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
+    # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
+    file = None
+    try:
+        template_dict = get_template(image_template_name)
+        imageworker = TemplateWorker(
+            image_template_name=image_template_name,
+            rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
+            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
+            font_colour=colour if colour else template_dict["defaultTextColour"],
+            font_name=font if font else "Roboto"
+        )
+        #imageworker = TemplateWorker(rect_top_left=[10,10], rect_bottom_right=[320, 240], font_path=font)
+        imagehash = imageworker.imageWork(caption=caption)
+        file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
+        file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
+    except Exception as e:
+        print("Oh cock @ template")
+        print(e)
+    
+    return file, file_path
+
+def template_cleanup(file_path: str):
+    try:
+        os.remove(file_path)
+        print(f"Deleted file: {file_path}")
+    except Exception as e:
+        print(f"Error deleting file {file_path}: {e}")
