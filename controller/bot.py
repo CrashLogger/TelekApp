@@ -51,16 +51,30 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
     # Edita una imagen con una caption
     # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
     # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
-    file, file_path = template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font, colour=colour)
-    await interaction.response.send_message(file=file)
-    template_cleanup(file_path=file_path)
+    await interaction.response.defer()
+    try:
+        file, file_path = template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font, colour=colour)
+        if file:
+            await interaction.followup.send(file=file)
+        else:
+            await interaction.followup.send("Owie :(")
+        template_cleanup(file_path=file_path)
+    except Exception:
+        await interaction.followup.send("Big owie owowowow :'((")
 
 # Atajo para /sonic
 @bot.tree.command()
 async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
-    file, file_path = template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
-    await interaction.response.send_message(file=file)
-    template_cleanup(file_path=file_path)
+    await interaction.response.defer()
+    try:
+        file, file_path = template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
+        if file:
+            await interaction.followup.send(file=file)
+        else:
+            await interaction.followup.send("Owie :(")
+        template_cleanup(file_path=file_path)
+    except Exception:
+        await interaction.followup.send("Big owie owowowow :'((")
 
 
 @bot.tree.command()
