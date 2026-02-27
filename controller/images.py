@@ -51,6 +51,7 @@ class TemplateWorker:
             myFont = ImageFont.load_default()
             print("Using default font")
 
+        # Como se nota cuando cambio de sitio del que copio :3
         # Vamos a encontrar el tamaño del texto a base de coger un tamaño enorme y bajarlo hasta que quepa
         min_font_size = 8
         current_font_size = self.font_size
