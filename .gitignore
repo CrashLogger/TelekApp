@@ -203,6 +203,8 @@ cython_debug/
 
 *.db
 
+image-templates/tmp
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
