@@ -73,6 +73,24 @@ def get_trigger(trigger_content):
     conn.close()
     return row
 
+def get_template(template_command):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    query = """
+        SELECT *
+        FROM templates
+        WHERE LOWER(templateCommand) = LOWER(?)
+        ORDER BY idTemplate DESC
+        LIMIT 1;
+    """
+ 
+    c.execute(query, (template_command,))
+    row = c.fetchone()
+    conn.close()
+    return row
+
 def get_random_response(trigger_content):
     match = get_trigger(trigger_content)
     if match:

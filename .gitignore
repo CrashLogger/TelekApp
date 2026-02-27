@@ -202,6 +202,9 @@ cython_debug/
 .cursorindexingignore
 
 *.db
+*.ttf
+*respuestas.json
+image-templates/tmp
 
 # Marimo
 marimo/_static/

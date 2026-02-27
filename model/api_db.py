@@ -1,5 +1,6 @@
 import sqlite3
 from flask import g
+from controller.images import TemplateWorker
 
 DATABASE = "erlantzi_es_un_txapuzas.db"
 
@@ -32,7 +33,7 @@ def close_db(e=None):
 # Query Functions
 # =========================
 
-def get_combos(trigger_content=None):
+def get_combos(trigger_content:str=None):
     db = get_db()
     c = db.cursor()
 
@@ -75,7 +76,6 @@ def get_combos(trigger_content=None):
     sorted_list = sorted(result.values(), key=lambda x: x['trigger'])
     return list(sorted_list)
 
-
 # =========================
 # Insert Functions
 # =========================
@@ -106,47 +106,51 @@ def create_combo(trigger_id, response_id):
     db.commit()
     return c.lastrowid
 
+# Para cuando haga la API de meter templates:
+# INSERT INTO templates (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, templateTextBoxBRX, templateTextBoxBRY, defaultTextColour)  VALUES ('gaming', 'gaming.png', 5, 5, 320, 240, 'FFFFFFFF')
 
-def delete_combo(trigger_content, response_content):
+def create_template(template_data):
+    """
+    Crea una nueva plantilla con los datos del form
+    No sé como subir imagenes o dónde guardarlas aun
+    
+    template_data:
+    - template_command: str (En el comando de discord, el primer argumento: /template [template_command] [caption])
+    - template_image_file: str (e.g., 'gaming.png')
+    - text_box_tl_x: int (top-left X)
+    - text_box_tl_y: int (top-left Y)
+    - text_box_br_x: int (bottom-right X)
+    - text_box_br_y: int (bottom-right Y)
+    - default_text_colour: str (hex)
+    """
     db = get_db()
     c = db.cursor()
+    
+    c.execute("""
+        INSERT INTO templates 
+        (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, 
+         templateTextBoxBRX, templateTextBoxBRY, defaultTextColour) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        template_data['template_command'],
+        template_data['template_image_file'],
+        template_data['text_box_tl_x'],
+        template_data['text_box_tl_y'],
+        template_data['text_box_br_x'],
+        template_data['text_box_br_y'],
+        template_data['default_text_colour']
+    ))
 
-    # Log the inputs (use !r to show hidden characters like spaces, quotes, etc.)
-    print(f"[DEBUG] Inputs: trigger='{trigger_content!r}', response='{response_content!r}'")
+    
+    db.commit()
+    return c.lastrowid
 
-    # Get all triggers matching the input (to check for duplicates)
-    c.execute("SELECT idTrigger, content FROM trigger WHERE content LIKE ?", (trigger_content,))
-    trigger_rows = c.fetchall()
-    print(f"[DEBUG] Found triggers for '{trigger_content}':")
-    for row in trigger_rows:
-        print(f"  - ID: {row['idTrigger']}, Content: '{row['content']!r}'")
 
-    # Get all responses matching the input (to check for duplicates)
-    c.execute("SELECT idResponse, content FROM response WHERE content LIKE ?", (response_content,))
-    response_rows = c.fetchall()
-    print(f"[DEBUG] Found responses for '{response_content}':")
-    for row in response_rows:
-        print(f"  - ID: {row['idResponse']}, Content: '{row['content']!r}'")
 
-    # Get the first trigger and response (if they exist)
-    trigger_row = trigger_rows[0] if trigger_rows else None
-    response_row = response_rows[0] if response_rows else None
 
-    # Log the IDs being used for deletion
-    if trigger_row and response_row:
-        print(f"[DEBUG] Using IDs: trigger_id={trigger_row['idTrigger']}, response_id={response_row['idResponse']}")
-
-        # Check if the combo exists
-        c.execute(
-            "SELECT * FROM combo WHERE idTrigger = ? AND idResponse = ?",
-            (trigger_row["idTrigger"], response_row["idResponse"])
-        )
-        combo_row = c.fetchone()
-        print(f"[DEBUG] Combo exists: {combo_row is not None}")
-        if combo_row:
-            print(f"[DEBUG] Combo details: {combo_row}")
-    else:
-        print("[DEBUG] No trigger or response found. Cannot delete.")
+# =========================
+# Delete Functions
+# =========================
 
 def delete_combo(trigger_content, response_content):
     db = get_db()
