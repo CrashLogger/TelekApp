@@ -83,14 +83,14 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
 async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
     await interaction.response.defer()
     try:
-        file, file_path = await template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font.lower(), colour=colour)
+        file, file_path = await template_generic(interaction=interaction, template_command_name="sonic", caption=caption, font=font.lower(), colour=colour)
         if file:
             await interaction.followup.send(file=file)
         else:
             await interaction.followup.send("Owie :(")
         template_cleanup(file_path=file_path)
-    except Exception:
-        await interaction.followup.send("Big owie owowowow :'((")
+    except Exception as e:
+        await interaction.followup.send(f"Big owie owowowow :'((: \n{e}")
 
 @bot.tree.command(name="links", description="La nueva forma epica de poner links, en lugar del trigger url")
 async def links(interaction: discord.Interaction):
