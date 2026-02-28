@@ -87,6 +87,18 @@ def create_trigger(trigger):
     db.commit()
     return c.lastrowid
 
+def create_trigger_from_file(data):
+    db = get_db()
+    c = db.cursor()
+    triggers = [item["trigger"] for item in data]
+    inserted_ids = []
+    for trigger in triggers:
+        c.execute(
+            "INSERT INTO trigger (content) VALUES (?)", (trigger,)
+        )
+        inserted_ids.append(c.lastrowid)
+    db.commit()
+    return inserted_ids
 
 def create_response(response):
     db = get_db()
@@ -95,6 +107,18 @@ def create_response(response):
     db.commit()
     return c.lastrowid
 
+def create_response_from_file(data):
+    db = get_db()
+    c = db.cursor()
+    responses = [item["autoresponse"] for item in data]
+    inserted_ids = []
+    for response in responses:
+        c.execute(
+            "INSERT INTO response (content) VALUES (?)", (response,)
+        )
+        inserted_ids.append(c.lastrowid)
+    db.commit()
+    return inserted_ids
 
 def create_combo(trigger_id, response_id):
     db = get_db()
@@ -105,6 +129,24 @@ def create_combo(trigger_id, response_id):
     )
     db.commit()
     return c.lastrowid
+
+
+def create_combo_from_file(idsTrigger,idsResponse):
+    pairs = list(zip(idsTrigger, idsResponse))
+    db = get_db()
+    c = db.cursor()
+
+    inserted_ids = []
+
+    for pair in pairs:
+        c.execute(
+            "INSERT INTO combo (idTrigger, idResponse) VALUES (?, ?)",
+            pair
+        )
+        inserted_ids.append(c.lastrowid)
+
+    db.commit()
+    return inserted_ids
 
 # Para cuando haga la API de meter templates:
 # INSERT INTO templates (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, templateTextBoxBRX, templateTextBoxBRY, defaultTextColour)  VALUES ('gaming', 'gaming.png', 5, 5, 320, 240, 'FFFFFFFF')

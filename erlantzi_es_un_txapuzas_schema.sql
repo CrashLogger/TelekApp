@@ -46,7 +46,7 @@ CREATE TABLE user (
     id serial primary key,
     username varchar(255) not null,
     password_hash varchar(255) not null
-)
+);
 
 CREATE INDEX idx_combo_trigger ON combo(idTrigger);
 CREATE INDEX idx_combo_response ON combo(idResponse);
