@@ -35,6 +35,19 @@
         </form>
 
     <div>
+        <button id="friki">Soy un Friki</button>
+        <form id="autoresponse-json" hidden>
+            <label for="jsone">Botau fitxategia:</label>
+            <input type="file" id="jsone" name="json_fitx"><button type="submit">Botau</button>
+            <p>JSON adibidea (para los que sois frikis fake):</p>
+            <pre id="json-preview" style="background: #f9f9f9; padding: 10px; border: 1px solid #ddd; max-width: 450px;margin: 0 auto; display: block;text-align: left;">[  
+    { "trigger": "trigger_1", "autoresponse": "response_1" },  
+    { "trigger": "trigger_2", "autoresponse": "response_2" }, 
+    { "trigger": "trigger_3", "autoresponse": "response_3" }   
+]</pre>
+        </form>
+        </div>
+        <div>
         <h2>Respuestas disponibles</h2>
         <ul id="combos"></ul>
             
@@ -88,6 +101,41 @@
                 console.error("Error creating combo:", error);
             }
         });
+
+        document.getElementById("friki").addEventListener("click",async function(event){
+            document.getElementById("autoresponse-json").toggleAttribute("hidden");
+            
+        });
+
+        document.getElementById("autoresponse-json").addEventListener("submit",async function(event){
+            event.preventDefault();
+            const file = document.getElementById("jsone").files[0];
+            const text = await file.text();     
+            const jsonData = JSON.parse(text);  
+
+                        
+            try {
+                const response = await fetch(apiUrl + "discordbotapi_json", {
+                    method: "POST",
+                    headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(jsonData)
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+                console.log("Created combo from file:", data);
+                document.getElementById('jsone').value = '';
+                window.location.reload();
+
+            } catch (error) {
+                console.error("Error creating combo from file:", error);
+            }
+        });
+
 
     } else {
         document.getElementById("login-form").addEventListener("submit", async function(event) {

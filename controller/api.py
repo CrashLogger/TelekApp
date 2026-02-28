@@ -92,6 +92,31 @@ def discord_bot_api():
 
     return jsonify({"Success": "omg cafecito lo hiciste!"}), 200
 
+@app.route('/TelekApp/discordbotapi_json', methods=['POST'])
+@requires_auth
+def discord_bot_api_json():
+    data = request.get_json()
+    if not data:
+        return jsonify({"Error": "lo que eres es un flipao"}), 400
+
+    for item in data:
+        # Required fields
+        trigger = item.get('trigger').lower()
+        autoresponse = item.get('autoresponse')
+        if not trigger or not autoresponse:
+            return jsonify({"Error": "nena pero dime a que responder"}), 400
+
+    # Save to database
+    try:
+        idsTrigger = create_trigger_from_file(data)
+        idsResponse = create_response_from_file(data)
+        create_combo_from_file(idsTrigger,idsResponse)
+    except Exception as e:
+        print("Error saving to database:", e)
+        return jsonify({"Error": "Failed to save to database"}), 500
+
+    return jsonify({"Success": "omg cafecito lo hiciste!"}), 200
+
 @app.route('/TelekApp/autoresponse', methods=['GET'])
 @requires_auth
 def get_all_combos_route():
