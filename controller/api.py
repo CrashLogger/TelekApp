@@ -223,14 +223,18 @@ def template():
 
     image = request.files["template"]
     filename = image.filename
+    filename = image.filename.lower()
     template_name = request.form.get("template_name")
+    template_name = template_name.lower()
     coordinates_tl = request.form.get("coordinates_tl")
     coordinates_br = request.form.get("coordinates_br")
     tl_x, tl_y = map(int, coordinates_tl.split(","))
     br_x, br_y = map(int, coordinates_br.split(","))
     colour = request.form.get("text_colour")
     if not colour:
-        colour = "#FFFFFF"
+        colour = "FFFFFFFF"
+    else:
+        colour = colour.lstrip("#") + "ff"
     template_data = {
     "template_command": template_name,  
     "template_image_file": filename,
