@@ -47,6 +47,16 @@ async def hello(interaction: discord.Interaction):
     await interaction.response.send_message(f'Hi, {interaction.user.mention}')
 
 @bot.tree.command()
+async def avatar(interaction: discord.Interaction, user: discord.User = None):
+    await interaction.response.defer()
+    # Si no se dice la foto de quien, se coge la de quien manda el comando
+    user = user or interaction.user
+    avatar_url = user.display_avatar.url
+    embed = discord.Embed(title=f"Fotite de: {user.display_name}", color=discord.Color.pink())
+    embed.set_image(url=avatar_url)
+    await interaction.followup.send(embed=embed)
+
+@bot.tree.command()
 async def template(interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", colour:str = None ):
     # Edita una imagen con una caption
     # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
