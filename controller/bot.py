@@ -56,28 +56,41 @@ async def avatar(interaction: discord.Interaction, user: discord.User = None):
     embed.set_image(url=avatar_url)
     await interaction.followup.send(embed=embed)
 
-@bot.tree.command()
-async def template(interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", colour:str = None ):
+@bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
+async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "Roboto", colour:str = None ):
     # Edita una imagen con una caption
     # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
     # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
     await interaction.response.defer()
+    
     try:
-        file, file_path = template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font, colour=colour)
+        if caption:
+            file, file_path = await template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font, colour=colour)
+        elif image:
+            if not image.content_type.startswith('image/'):
+                await interaction.followup.send("Eso no es una imagen, espabila.", ephemeral=True)
+                return
+            elif image.content_type.startswith('image/gif'):
+                image_data = await image.read()
+                file, file_path = await template_picture_in_picture(interaction=interaction, image_template_name=image_template_name, image_data=image_data, type='gif')
+            else:
+                image_data = await image.read()
+                file, file_path = await template_picture_in_picture(interaction=interaction, image_template_name=image_template_name, image_data=image_data, type='png')
+
         if file:
             await interaction.followup.send(file=file)
         else:
             await interaction.followup.send("Owie :(")
         template_cleanup(file_path=file_path)
-    except Exception:
-        await interaction.followup.send("Big owie owowowow :'((")
+    except Exception as e:
+        await interaction.followup.send(f"Big owie owowowow :'((:\n{e}")
 
 # Atajo para /sonic
 @bot.tree.command()
 async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
     await interaction.response.defer()
     try:
-        file, file_path = template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
+        file, file_path = await template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
         if file:
             await interaction.followup.send(file=file)
         else:
@@ -85,7 +98,6 @@ async def sonic(interaction: discord.Interaction, caption: str, font:str = "Robo
         template_cleanup(file_path=file_path)
     except Exception:
         await interaction.followup.send("Big owie owowowow :'((")
-
 
 @bot.tree.command()
 async def links(interaction: discord.Interaction):
@@ -118,15 +130,12 @@ async def on_message(message):
     if response:
         await message.channel.send(response)
 
-
 def run_bot():
     bot.run(DISCORD_TOKEN)
 
-def template_generic (interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", colour:str = None ):
+async def template_generic (interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", colour:str = None):
     
     # Edita una imagen con una caption
-    # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
-    # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
     file = None
     try:
         template_dict = get_template(image_template_name)
@@ -137,10 +146,35 @@ def template_generic (interaction: discord.Interaction, image_template_name:str,
             font_colour=colour if colour else template_dict["defaultTextColour"],
             font_name=font if font else "Roboto"
         )
-        #imageworker = TemplateWorker(rect_top_left=[10,10], rect_bottom_right=[320, 240], font_path=font)
-        imagehash = imageworker.imageWork(caption=caption)
+        imagehash = imageworker.image_and_text(caption=caption)
         file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
         file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
+    except Exception as e:
+        print("Oh cock @ template")
+        print(e)
+    
+    return file, file_path
+
+async def template_picture_in_picture (interaction: discord.Interaction, image_template_name:str, image_data:discord.Attachment, font:str = "Roboto", colour:str = None, type:str = 'png'):
+    
+    # Edita una imagen poniendo otra imagen donde normalmente iría el texto
+    file = None
+    try:
+        template_dict = get_template(image_template_name)
+        imageworker = TemplateWorker(
+            image_template_name=image_template_name,
+            rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
+            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
+            font_colour=colour if colour else template_dict["defaultTextColour"],
+            font_name=font if font else "Roboto"
+        )
+        
+        if type=='gif':
+            imagehash = imageworker.image_and_animated_gif(image_data=image_data)
+        else:
+            imagehash = imageworker.image_and_image(image_data=image_data)
+        file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.{type}'
+        file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.{type}")
     except Exception as e:
         print("Oh cock @ template")
         print(e)
@@ -150,6 +184,5 @@ def template_generic (interaction: discord.Interaction, image_template_name:str,
 def template_cleanup(file_path: str):
     try:
         os.remove(file_path)
-        print(f"Deleted file: {file_path}")
     except Exception as e:
         print(f"Error deleting file {file_path}: {e}")
