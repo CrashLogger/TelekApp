@@ -41,14 +41,8 @@ bot = TelekApp(intents=intents)
 async def on_ready():
     print(f"Eyyyyy ey ey aaaaaqui {bot.user} v{misc.VERSION} eeeeeeen Discord")
 
-@bot.tree.command()
-async def hello(interaction: discord.Interaction):
-    """Says hello!"""
-    await interaction.response.send_message(f'Hi, {interaction.user.mention}')
-
-@bot.tree.command()
+@bot.tree.command(name="avatar", description="Da la fotite de perfil de un usuario, o la tuya si no dices ningún usuario")
 async def avatar(interaction: discord.Interaction, user: discord.User = None):
-    """Da la fotite de perfil de un usuario, o la tuya si no dices ningún usuario"""
     await interaction.response.defer()
     # Si no se dice la foto de quien, se coge la de quien manda el comando
     user = user or interaction.user
@@ -59,7 +53,6 @@ async def avatar(interaction: discord.Interaction, user: discord.User = None):
 
 @bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
 async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "Roboto", colour:str = None ):
-    """Te deja juntar imagenes con texto, imagenes con imagenes, o imagenes con gifs"""
     # Edita una imagen con una caption
     await interaction.response.defer()
     
@@ -86,9 +79,8 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
         await interaction.followup.send(f"Big owie owowowow :'((:\n{e}")
 
 # Atajo para /sonic
-@bot.tree.command()
+@bot.tree.command(name="sonic", description="Es un atajo para la plantilla de sonic, solo para texto, como en otros bots")
 async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
-    """Es un atajo para la plantilla de sonic"""
     await interaction.response.defer()
     try:
         file, file_path = await template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
@@ -100,13 +92,11 @@ async def sonic(interaction: discord.Interaction, caption: str, font:str = "Robo
     except Exception:
         await interaction.followup.send("Big owie owowowow :'((")
 
-@bot.tree.command()
+@bot.tree.command(name="links", description="La nueva forma epica de poner links, en lugar del trigger url")
 async def links(interaction: discord.Interaction):
-    combos = get_combos()
-    triggers = [combo["trigger"] for combo in combos]
     await interaction.response.send_message(f"# URLs:\nChange my settings at:\n{misc.URL}\nBugs? Improvements?:\n{misc.ISSUES}")
 
-@bot.tree.command()
+@bot.tree.command(name="triggers", description="La nueva forma epica de ver los triggers, en lugar del trigger debug triggers")
 async def triggers(interaction: discord.Interaction):
     combos = get_combos()
     triggers = [combo["trigger"] for combo in combos]
@@ -120,6 +110,7 @@ async def on_message(message):
     content = message.content.strip().lower()
 
     # Debug: list all triggers
+    # DEPRECATED
     if content == "debug triggers":
         combos = get_combos()
         triggers = [combo["trigger"] for combo in combos]
