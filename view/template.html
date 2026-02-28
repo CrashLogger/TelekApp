@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bot telekil</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Irudiak</h1>
+    <div>
+        <button onclick="window.location.href='index.html'">Atzera</button>
+        <button id="new_template">Sortu template berria</button>
+        <form id="template_form" hidden>
+            <label >Irudia:</label>
+            <input type="file" id="template_input" name="template_fitx">
+            <label >Templatearen izena:</label>
+            <input type="text" id="template_name" placeholder="Izena">
+            <label >Textuaren Top Left izkina:</label>
+            <input type="text" id="template_tl" placeholder="X,Y">
+            <label >Textuaren Bottom Right izkina:</label>
+            <input type="text" id="template_br" placeholder="X,Y">
+            <label >Textuaren kolorea:</label>
+            <input type="color" id="text_colour">
+            <button type="submit">Botau</button>
+        </form>
+    </div>
+    
+
+</body>
+
+<script>
+    const token = localStorage.getItem("token-telekapp") || null;
+    const apiUrl =  window.location.origin + "/TelekApp/";
+document.getElementById("new_template").addEventListener("click", async function(event) {
+    document.getElementById("template_form").toggleAttribute("hidden");
+});
+
+document.getElementById("template_form").addEventListener("submit",async function(event){
+    event.preventDefault();
+    const formData = new FormData();
+
+    const file = document.getElementById("template_input").files[0];
+    const template_name = document.getElementById("template_name").value;
+    const coordinates_tl = document.getElementById("template_tl").value;
+    const coordinates_br = document.getElementById("template_br").value;
+    const colour = document.getElementById("text_colour").value;
+    formData.append("template", file);
+    formData.append("template_name", template_name);
+    formData.append("coordinates_tl", coordinates_tl);
+    formData.append("coordinates_br", coordinates_br);
+    formData.append("text_colour",colour);
+                
+    try {
+        const response = await fetch(apiUrl + "template", {
+            method: "POST",
+            headers: {
+            "Authorization": `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        console.log("Created combo from file:", data);
+        document.getElementById('template_input').value = '';
+        document.getElementById('template_name').value = '';
+        document.getElementById('template_tl').value = '';
+        document.getElementById('template_br').value = '';
+        document.getElementById('text_colour').value = '';
+        window.location.reload();
+
+    } catch (error) {
+        console.error("Error creating combo from file:", error);
+    }
+});
+
+
+</script>

@@ -215,10 +215,45 @@ def  register():
     except Exception as e:
         return jsonify({"error":f"ha ocurrido un extraño suseso"}), 500
 
+@app.route('/TelekApp/template',methods=['POST'])
+@requires_auth
+def template():
+    if "template" not in request.files:
+        return jsonify({"error": "No image provided"}), 400
+
+    image = request.files["template"]
+    filename = image.filename
+    template_name = request.form.get("template_name")
+    coordinates_tl = request.form.get("coordinates_tl")
+    coordinates_br = request.form.get("coordinates_br")
+    tl_x, tl_y = map(int, coordinates_tl.split(","))
+    br_x, br_y = map(int, coordinates_br.split(","))
+    colour = request.form.get("text_colour")
+    if not colour:
+        colour = "#FFFFFF"
+    template_data = {
+    "template_command": template_name,  
+    "template_image_file": filename,
+    "text_box_tl_x": tl_x,
+    "text_box_tl_y": tl_y,
+    "text_box_br_x": br_x,
+    "text_box_br_y": br_y,
+    "default_text_colour": colour  
+}
+    try:
+        create_template(template_data)
+        # Save the file
+        save_path = os.path.join("image-templates", filename)
+        image.save(save_path)
+        return jsonify({"message": "Template registered successfully"}), 200
+    except Exception as e:
+        return jsonify({"error":f"ha ocurrido un extraño suseso"}), 500
+    
+    
 
 def check_auth(username, password_hash):
     return authenticate(username, password_hash)
 
 def run_api():
-    app.run(port=5000, debug=False, use_reloader=False)
+    app.run(port=5000, debug=True, use_reloader=False)
 
