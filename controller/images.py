@@ -101,7 +101,7 @@ class TemplateWorker:
             # Guardar
             os.makedirs("image-templates/tmp", exist_ok=True)
             unique_id = hashlib.md5(image_data).hexdigest()[:10]
-            output_path = f"image-templates/tmp/{self.image_template_name}-{unique_id}.gif"
+            output_path = f"image-templates/tmp/{self.image_command_name}-{unique_id}.gif"
 
             # Save the first frame to get the dimensions
             frames[0].save(
