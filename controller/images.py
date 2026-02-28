@@ -1,9 +1,9 @@
 from PIL import Image, ImageDraw, ImageFont
-import textwrap
+import io
 import os
 import hashlib
 from typing import List
-import math
+import discord
 
 class TemplateWorker:
     def __init__(
@@ -27,7 +27,111 @@ class TemplateWorker:
         self.I1 = None
         self.image = None
 
-    def imageWork(self, caption: str):
+    def image_and_image(self, image_data:discord.Attachment):
+        # Abrir ambas imagenes
+        print(f"Opening template: {self.image_template_name}")
+        self.image = Image.open(f'image-templates/{self.image_template_name}.png').convert("RGBA")
+        image_pip = Image.open(io.BytesIO(image_data)).convert("RGBA")
+
+        # Tamaño de la imagen
+        target_width = self.rect_bottom_right[0] - self.rect_top_left[0]
+        target_height = self.rect_bottom_right[1] - self.rect_top_left[1]
+        image_pip.thumbnail((target_width, target_height))
+
+        # Para centrar la imagen como un pro
+        paste_x = self.rect_top_left[0] + (target_width - image_pip.width) // 2
+        paste_y = self.rect_top_left[1] + (target_height - image_pip.height) // 2
+
+        # Juntar y guardar
+        self.image.paste(image_pip, (paste_x, paste_y), image_pip)
+        os.makedirs("image-templates/tmp", exist_ok=True)
+        unique_id = hashlib.md5(image_data).hexdigest()[:10]
+        self.image.save(f"image-templates/tmp/{self.image_template_name}-{unique_id}.png")
+
+        return unique_id
+
+    def image_and_animated_gif(self, image_data:discord.Attachment):
+        """
+        Combine an animated GIF with a template image, creating a new animated GIF
+        where the GIF maintains its animation on top of the template.
+
+        Args:
+            image_data: The bytes of the GIF to paste onto the template.
+        """
+        # Open the template image
+        template = Image.open(f'image-templates/{self.image_template_name}.png').convert("RGBA")
+
+        # Open the GIF
+        with Image.open(io.BytesIO(image_data)) as gif:
+            if not getattr(gif, 'is_animated', False):
+                # If it's not a GIF, use the regular method
+                return self.image_and_image(image_data)
+
+            # Create a list to store the frames
+            frames = []
+            durations = []
+
+            # Process each frame of the GIF
+            try:
+                while True:
+                    # Create a copy of the template for each frame
+                    frame = template.copy()
+
+                    # Get the current frame of the GIF
+                    gif.seek(gif.tell())
+                    current_frame = gif.convert("RGBA")
+
+                    # Resize the frame to fit the rectangle while maintaining aspect ratio
+                    target_width = self.rect_bottom_right[0] - self.rect_top_left[0]
+                    target_height = self.rect_bottom_right[1] - self.rect_top_left[1]
+
+                    # Resize the frame
+                    current_frame = current_frame.resize((target_width, target_height))
+
+                    paste_x = self.rect_top_left[0] + (target_width - current_frame.width) // 2
+                    paste_y = self.rect_top_left[1] + (target_height - current_frame.height) // 2
+
+                    # Paste the frame
+                    frame.paste(current_frame, (paste_x, paste_y), current_frame)
+
+                    # Add the frame to our list
+                    frames.append(frame.copy())
+
+                    # Get the duration of the frame
+                    durations.append(gif.info.get('duration', 100))
+
+                    # Move to the next frame
+                    gif.seek(gif.tell() + 1)
+            except EOFError:
+                pass  # End of sequence
+
+            if not frames:
+                # If we couldn't process any frames, use the regular method
+                return self.image_and_image(image_data)
+
+            # Save the animated GIF
+            os.makedirs("image-templates/tmp", exist_ok=True)
+            unique_id = hashlib.md5(image_data).hexdigest()[:10]
+            output_path = f"image-templates/tmp/{self.image_template_name}-{unique_id}.gif"
+
+            # Save the first frame to get the dimensions
+            frames[0].save(
+                output_path,
+                format="GIF",
+                append_images=frames[1:],
+                save_all=True,
+                duration=durations,
+                loop=0,  # Loop forever
+                disposal=2  # Use disposal method 2 for better transparency handling
+            )
+
+            # Store the first frame as self.image for consistency
+            self.image = frames[0]
+
+            return unique_id
+
+
+    def image_and_text(self, caption: str):
         # Open an Image
         print(self.image_template_name)
         self.image = Image.open(f'image-templates/{self.image_template_name}.png')
