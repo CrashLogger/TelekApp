@@ -48,6 +48,7 @@ async def hello(interaction: discord.Interaction):
 
 @bot.tree.command()
 async def avatar(interaction: discord.Interaction, user: discord.User = None):
+    """Da la fotite de perfil de un usuario, o la tuya si no dices ningún usuario"""
     await interaction.response.defer()
     # Si no se dice la foto de quien, se coge la de quien manda el comando
     user = user or interaction.user
@@ -58,9 +59,8 @@ async def avatar(interaction: discord.Interaction, user: discord.User = None):
 
 @bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
 async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "Roboto", colour:str = None ):
+    """Te deja juntar imagenes con texto, imagenes con imagenes, o imagenes con gifs"""
     # Edita una imagen con una caption
-    # TODO: rect_top_left=[10, 10] y rect_bottom_right=[320, 240] deberían de salir de la base de datos!
-    # Hay que hacer un schema que considere imagenes, el rectángulo donde se puede poner el texto y el color que el texto debería ser!
     await interaction.response.defer()
     
     try:
@@ -88,6 +88,7 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
 # Atajo para /sonic
 @bot.tree.command()
 async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
+    """Es un atajo para la plantilla de sonic"""
     await interaction.response.defer()
     try:
         file, file_path = await template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
