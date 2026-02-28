@@ -58,17 +58,17 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
     
     try:
         if caption:
-            file, file_path = await template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font.lower(), colour=colour)
+            file, file_path = await template_generic(interaction=interaction, template_command_name=image_template_name, caption=caption, font=font.lower(), colour=colour)
         elif image:
             if not image.content_type.startswith('image/'):
                 await interaction.followup.send("Eso no es una imagen, espabila.", ephemeral=True)
                 return
             elif image.content_type.startswith('image/gif'):
                 image_data = await image.read()
-                file, file_path = await template_picture_in_picture(interaction=interaction, image_template_name=image_template_name, image_data=image_data, type='gif')
+                file, file_path = await template_picture_in_picture(interaction=interaction, template_command_name=image_template_name, image_data=image_data, type='gif')
             else:
                 image_data = await image.read()
-                file, file_path = await template_picture_in_picture(interaction=interaction, image_template_name=image_template_name, image_data=image_data, type='png')
+                file, file_path = await template_picture_in_picture(interaction=interaction, template_command_name=image_template_name, image_data=image_data, type='png')
 
         if file:
             await interaction.followup.send(file=file)
@@ -125,36 +125,38 @@ async def on_message(message):
 def run_bot():
     bot.run(DISCORD_TOKEN)
 
-async def template_generic (interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "roboto", colour:str = None):
+async def template_generic (interaction: discord.Interaction, template_command_name:str, caption: str, font:str = "roboto", colour:str = None):
     
     # Edita una imagen con una caption
     file = None
     try:
-        template_dict = get_template(image_template_name)
+        template_dict = get_template(template_command_name)
         imageworker = TemplateWorker(
-            image_template_name=image_template_name,
+            image_command_name=template_command_name,
+            image_template_name=template_dict["templateImageFile"],
             rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
             rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
             font_colour=colour if colour else template_dict["defaultTextColour"],
             font_name=font.lower() if font else "roboto"
         )
         imagehash = imageworker.image_and_text(caption=caption)
-        file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'
-        file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.png")
+        file_path = f'image-templates/tmp/{template_command_name}-{imagehash}.png'
+        file = discord.File(file_path, filename=f"{template_command_name}-{imagehash}.png")
     except Exception as e:
         print("Oh cock @ template")
         print(e)
     
     return file, file_path
 
-async def template_picture_in_picture (interaction: discord.Interaction, image_template_name:str, image_data:discord.Attachment, font:str = "Roboto", colour:str = None, type:str = 'png'):
+async def template_picture_in_picture (interaction: discord.Interaction, template_command_name:str, image_data:discord.Attachment, font:str = "Roboto", colour:str = None, type:str = 'png'):
     
     # Edita una imagen poniendo otra imagen donde normalmente iría el texto
     file = None
     try:
-        template_dict = get_template(image_template_name)
+        template_dict = get_template(template_command_name)
         imageworker = TemplateWorker(
-            image_template_name=image_template_name,
+            image_command_name=template_command_name,
+            image_template_name=template_dict["templateImageFile"],
             rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
             rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
             font_colour=colour if colour else template_dict["defaultTextColour"],
@@ -165,8 +167,8 @@ async def template_picture_in_picture (interaction: discord.Interaction, image_t
             imagehash = imageworker.image_and_animated_gif(image_data=image_data)
         else:
             imagehash = imageworker.image_and_image(image_data=image_data)
-        file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.{type}'
-        file = discord.File(file_path, filename=f"{image_template_name}-{imagehash}.{type}")
+        file_path = f'image-templates/tmp/{template_command_name}-{imagehash}.{type}'
+        file = discord.File(file_path, filename=f"{template_command_name}-{imagehash}.{type}")
     except Exception as e:
         print("Oh cock @ template")
         print(e)
