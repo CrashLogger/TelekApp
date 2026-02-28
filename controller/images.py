@@ -27,77 +27,65 @@ class TemplateWorker:
         self.I1 = None
         self.image = None
 
-    def image_and_image(self, image_data:discord.Attachment):
-        # Abrir ambas imagenes
-        print(f"Opening template: {self.image_template_name}")
-        self.image = Image.open(f'image-templates/{self.image_template_name}.png').convert("RGBA")
-        image_pip = Image.open(io.BytesIO(image_data)).convert("RGBA")
-
+    def image_into_image(self, template:Image, image_pip:Image):
         # Tamaño de la imagen
         target_width = self.rect_bottom_right[0] - self.rect_top_left[0]
         target_height = self.rect_bottom_right[1] - self.rect_top_left[1]
-        image_pip.thumbnail((target_width, target_height))
+        image_pip = image_pip.resize((target_width, target_height))
 
         # Para centrar la imagen como un pro
         paste_x = self.rect_top_left[0] + (target_width - image_pip.width) // 2
         paste_y = self.rect_top_left[1] + (target_height - image_pip.height) // 2
 
+        template.paste(image_pip, (paste_x, paste_y), image_pip)
+        return(template)
+
+    def image_and_image(self, image_data:discord.Attachment):
+        # Abrir ambas imagenes
+        image_data = bytes(image_data)
+        self.image = Image.open(f'image-templates/{self.image_template_name}.png').convert("RGBA")
+        image_pip = Image.open(io.BytesIO(image_data)).convert("RGBA")
+        image_pip.save(f"image-templates/tmp/{self.image_template_name}-33.png")
+
         # Juntar y guardar
-        self.image.paste(image_pip, (paste_x, paste_y), image_pip)
+        result_image:Image = self.image_into_image(template=self.image, image_pip=image_pip)
         os.makedirs("image-templates/tmp", exist_ok=True)
         unique_id = hashlib.md5(image_data).hexdigest()[:10]
-        self.image.save(f"image-templates/tmp/{self.image_template_name}-{unique_id}.png")
+        result_image.save(f"image-templates/tmp/{self.image_template_name}-{unique_id}.png")
 
         return unique_id
 
     def image_and_animated_gif(self, image_data:discord.Attachment):
-        """
-        Combine an animated GIF with a template image, creating a new animated GIF
-        where the GIF maintains its animation on top of the template.
-
-        Args:
-            image_data: The bytes of the GIF to paste onto the template.
-        """
+        # Juntamos una template con todos los frames de un gif y sacamos un gif de vuelta con mucho swag
         # Open the template image
         template = Image.open(f'image-templates/{self.image_template_name}.png').convert("RGBA")
-
-        # Open the GIF
+        image_data = bytes(image_data)
+        # Abrimos el gif
         with Image.open(io.BytesIO(image_data)) as gif:
             if not getattr(gif, 'is_animated', False):
-                # If it's not a GIF, use the regular method
+                # Si es un gif raro de esos en plan logo, nos da igual que sea un gif, lo podemos tratar como png
                 return self.image_and_image(image_data)
 
-            # Create a list to store the frames
             frames = []
             durations = []
 
-            # Process each frame of the GIF
+            # Procesamos todos los frames hasta que se acaben. No sé como sacar cuantos frames hay de un gif sin hacer esto primero.
             try:
                 while True:
                     # Create a copy of the template for each frame
                     frame = template.copy()
 
-                    # Get the current frame of the GIF
+                    # Sacamos cada imagen del gif y la guardamos como un PNG en el espacio RGBA
+                    # Si no haces RGBA, al ser un gif, a veces la lia y lo hace todo opaco
                     gif.seek(gif.tell())
                     current_frame = gif.convert("RGBA")
 
-                    # Resize the frame to fit the rectangle while maintaining aspect ratio
-                    target_width = self.rect_bottom_right[0] - self.rect_top_left[0]
-                    target_height = self.rect_bottom_right[1] - self.rect_top_left[1]
-
-                    # Resize the frame
-                    current_frame = current_frame.resize((target_width, target_height))
-
-                    paste_x = self.rect_top_left[0] + (target_width - current_frame.width) // 2
-                    paste_y = self.rect_top_left[1] + (target_height - current_frame.height) // 2
-
-                    # Paste the frame
-                    frame.paste(current_frame, (paste_x, paste_y), current_frame)
-
-                    # Add the frame to our list
+                    # Funcioncita pro que junta imagenes, guardamos todos los frames en una lista
+                    frame = self.image_into_image(template=frame, image_pip=current_frame)
                     frames.append(frame.copy())
 
-                    # Get the duration of the frame
+                    # Sacar la duración del frame del gif original
+                    # Si no dice nada, ponemos a 100 porque si
                     durations.append(gif.info.get('duration', 100))
 
                     # Move to the next frame
@@ -106,10 +94,10 @@ class TemplateWorker:
                 pass  # End of sequence
 
             if not frames:
-                # If we couldn't process any frames, use the regular method
+                # Si falla a detectar frames asumimos que es uno solo, y que esa función nos diga si algo va mal
                 return self.image_and_image(image_data)
 
-            # Save the animated GIF
+            # Guardar
             os.makedirs("image-templates/tmp", exist_ok=True)
             unique_id = hashlib.md5(image_data).hexdigest()[:10]
             output_path = f"image-templates/tmp/{self.image_template_name}-{unique_id}.gif"
@@ -121,10 +109,11 @@ class TemplateWorker:
                 append_images=frames[1:],
                 save_all=True,
                 duration=durations,
-                loop=0,  # Loop forever
-                disposal=2  # Use disposal method 2 for better transparency handling
+                loop=0,  # Loop forever - Otra cosa mas que he robado sin saber muy bien por qué
+                disposal=2  # Tira el frame anterior del gif. No nos va a hacer falta hasta que tengamos templates transparentes
             )
 
+            # Esto estaba en el ejemplo y el gatito quiere que lo mantenga. Ahí se queda.
             # Store the first frame as self.image for consistency
             self.image = frames[0]
 
