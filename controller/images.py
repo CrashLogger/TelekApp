@@ -9,6 +9,7 @@ class TemplateWorker:
     def __init__(
         self,
         image_template_name: str,
+        image_command_name: str,
         rect_top_left: List[int] = [10, 10],
         rect_bottom_right: List[int] = [500, 300],
         font_name: str = 'Roboto',
@@ -20,6 +21,7 @@ class TemplateWorker:
         self.rect_bottom_right = rect_bottom_right
         self.font_path = f"image-templates/fonts/{font_name}.ttf"
         self.font_size = font_size
+        self.image_command_name = image_command_name
 
         # Convert HEX color string to RGB tuple
         self.font_color = tuple(int(font_colour[i:i+2], 16) for i in (0, 2, 4))
@@ -43,22 +45,21 @@ class TemplateWorker:
     def image_and_image(self, image_data:discord.Attachment):
         # Abrir ambas imagenes
         image_data = bytes(image_data)
-        self.image = Image.open(f'image-templates/{self.image_template_name}.png').convert("RGBA")
+        self.image = Image.open(f'image-templates/{self.image_template_name}').convert("RGBA")
         image_pip = Image.open(io.BytesIO(image_data)).convert("RGBA")
-        image_pip.save(f"image-templates/tmp/{self.image_template_name}-33.png")
 
         # Juntar y guardar
         result_image:Image = self.image_into_image(template=self.image, image_pip=image_pip)
         os.makedirs("image-templates/tmp", exist_ok=True)
         unique_id = hashlib.md5(image_data).hexdigest()[:10]
-        result_image.save(f"image-templates/tmp/{self.image_template_name}-{unique_id}.png")
+        result_image.save(f"image-templates/tmp/{self.image_command_name}-{unique_id}.png")
 
         return unique_id
 
     def image_and_animated_gif(self, image_data:discord.Attachment):
         # Juntamos una template con todos los frames de un gif y sacamos un gif de vuelta con mucho swag
         # Open the template image
-        template = Image.open(f'image-templates/{self.image_template_name}.png').convert("RGBA")
+        template = Image.open(f'image-templates/{self.image_template_name}').convert("RGBA")
         image_data = bytes(image_data)
         # Abrimos el gif
         with Image.open(io.BytesIO(image_data)) as gif:
@@ -123,7 +124,7 @@ class TemplateWorker:
     def image_and_text(self, caption: str):
         # Open an Image
         print(self.image_template_name)
-        self.image = Image.open(f'image-templates/{self.image_template_name}.png')
+        self.image = Image.open(f'image-templates/{self.image_template_name}')
 
         # Call draw Method to add 2D graphics in an image
         self.I1 = ImageDraw.Draw(self.image)
@@ -218,7 +219,7 @@ class TemplateWorker:
         # Guardamos archivo temporal
         os.makedirs("image-templates/tmp", exist_ok=True)
         unique_id = hashlib.md5(caption.encode()).hexdigest()[:10]
-        self.image.save(f"image-templates/tmp/{self.image_template_name}-{unique_id}.png")
+        self.image.save(f"image-templates/tmp/{self.image_command_name}-{unique_id}.png")
 
         return unique_id
     
