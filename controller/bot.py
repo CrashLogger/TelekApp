@@ -52,13 +52,13 @@ async def avatar(interaction: discord.Interaction, user: discord.User = None):
     await interaction.followup.send(embed=embed)
 
 @bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
-async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "Roboto", colour:str = None ):
+async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "roboto", colour:str = None ):
     # Edita una imagen con una caption
     await interaction.response.defer()
     
     try:
         if caption:
-            file, file_path = await template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font, colour=colour)
+            file, file_path = await template_generic(interaction=interaction, image_template_name=image_template_name, caption=caption, font=font.lower(), colour=colour)
         elif image:
             if not image.content_type.startswith('image/'):
                 await interaction.followup.send("Eso no es una imagen, espabila.", ephemeral=True)
@@ -83,7 +83,7 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
 async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
     await interaction.response.defer()
     try:
-        file, file_path = await template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font, colour=colour)
+        file, file_path = await template_generic(interaction=interaction, image_template_name="sonic", caption=caption, font=font.lower(), colour=colour)
         if file:
             await interaction.followup.send(file=file)
         else:
@@ -125,7 +125,7 @@ async def on_message(message):
 def run_bot():
     bot.run(DISCORD_TOKEN)
 
-async def template_generic (interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "Roboto", colour:str = None):
+async def template_generic (interaction: discord.Interaction, image_template_name:str, caption: str, font:str = "roboto", colour:str = None):
     
     # Edita una imagen con una caption
     file = None
@@ -136,7 +136,7 @@ async def template_generic (interaction: discord.Interaction, image_template_nam
             rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
             rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
             font_colour=colour if colour else template_dict["defaultTextColour"],
-            font_name=font if font else "Roboto"
+            font_name=font.lower() if font else "roboto"
         )
         imagehash = imageworker.image_and_text(caption=caption)
         file_path = f'image-templates/tmp/{image_template_name}-{imagehash}.png'

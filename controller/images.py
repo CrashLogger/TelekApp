@@ -141,8 +141,14 @@ class TemplateWorker:
         try:
             myFont = ImageFont.truetype(self.font_path, self.font_size)
         except IOError:
-            myFont = ImageFont.load_default()
-            print("Using default font")
+            try:
+                # Primero probamos a cargar roboto, sobreescribiendo la fuente custom
+                self.font_path = f"image-templates/fonts/roboto.ttf"
+                myFont = ImageFont.truetype(self.font_path, self.font_size)
+            except IOError:
+                # Si roboto también falla, usamos la default de pillow, que es una mierda
+                myFont = ImageFont.load_default()
+                print("Using default font")
 
         # Como se nota cuando cambio de sitio del que copio :3
         # Vamos a encontrar el tamaño del texto a base de coger un tamaño enorme y bajarlo hasta que quepa
