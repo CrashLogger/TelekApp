@@ -53,13 +53,20 @@ class TemplateWorker:
         os.makedirs("image-templates/tmp", exist_ok=True)
         unique_id = hashlib.md5(image_data).hexdigest()[:10]
         result_image.save(f"image-templates/tmp/{self.image_command_name}-{unique_id}.png")
-
         return unique_id
 
     def image_and_animated_gif(self, image_data:discord.Attachment):
         # Juntamos una template con todos los frames de un gif y sacamos un gif de vuelta con mucho swag
         # Open the template image
-        template = Image.open(f'image-templates/{self.image_template_name}').convert("RGBA")
+        template:Image = Image.open(f'image-templates/{self.image_template_name}').convert("RGBA")
+        original_width, original_height = template.size
+        max_gif_width = 800
+        max_gif_height = 600
+        if original_width > 800 or original_height > 600:
+            template.thumbnail((max_gif_width, max_gif_height), Image.Resampling.LANCZOS)
+            self.rect_top_left = (int((self.rect_top_left[0]/original_width)*template.size[0]), int((self.rect_top_left[1]/original_height)*template.size[1]))
+            self.rect_bottom_right = (int((self.rect_bottom_right[0]/original_width)*template.size[0]), int((self.rect_bottom_right[1]/original_height)*template.size[1]))
+
         image_data = bytes(image_data)
         # Abrimos el gif
         with Image.open(io.BytesIO(image_data)) as gif:
