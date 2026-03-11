@@ -13,7 +13,7 @@ from model.api_db import *
 from dotenv import load_dotenv
 
 PROJECT_ROOT = os.getcwd()
-
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 load_dotenv()
 
 app = Flask(__name__)
@@ -219,11 +219,16 @@ def  register():
 @requires_auth
 def template():
     if "template" not in request.files:
-        return jsonify({"error": "No image provided"}), 400
+        return jsonify({"error": "No image provided"}), 400    
 
     image = request.files["template"]
     filename = image.filename
     filename = image.filename.lower()
+    #Check file extension (first split starting from the right)
+    extension = filename.rsplit(".",1)[1]
+    if extension not in ALLOWED_EXTENSIONS: 
+        return jsonify({"error": "No ha colado crack"}), 400
+
     template_name = request.form.get("template_name")
     template_name = template_name.lower()
     coordinates_tl = request.form.get("coordinates_tl")
