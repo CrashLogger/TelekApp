@@ -2,7 +2,7 @@ import os
 import discord
 from discord import app_commands
 from dotenv import load_dotenv
-from model.bot_db import get_random_response, get_combos, get_template
+from model.bot_db import get_random_response, get_combos, get_template, get_templates
 from model import misc
 from controller.images import TemplateWorker
 
@@ -104,6 +104,16 @@ async def triggers(interaction: discord.Interaction):
     for trigger in triggers:
         triggerList=triggerList + f"- {trigger}\n"
     await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy triggers are:\n```{triggerList}```")
+
+@bot.tree.command(name="templates", description="Forma epica de ver los templates para shitposts que tenemos")
+async def triggers(interaction: discord.Interaction):
+    templateData = get_templates()
+    templates = [template["templateCommand"] for template in templateData]
+    triggerList:str = ""
+    for template in templates:
+        triggerList=triggerList + f"- {template}\n"
+    await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy triggers are:\n```{triggerList}```")
+
 
 @bot.event
 async def on_message(message):
