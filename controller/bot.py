@@ -2,9 +2,9 @@ import os
 import discord
 from discord import app_commands
 from dotenv import load_dotenv
-from model.bot_db import get_random_response, get_combos, get_template, get_templates
+from model.bot_db import get_random_response, get_combos, get_template, get_templates, get_overlay, get_overlays
 from model import misc
-from controller.images import TemplateWorker
+from controller.images import TemplateWorker, OverlayWorker
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -51,16 +51,19 @@ async def avatar(interaction: discord.Interaction, user: discord.User = None):
     embed.set_image(url=avatar_url)
     await interaction.followup.send(embed=embed)
 
-async def overlay(interaction: discord.Interaction, image_overlay_name:str,image:discord.Attachment):
-    template_dict = get_template(template_command_name)
-    imageworker = TemplateWorker(
-        image_command_name=template_command_name,
-        image_template_name=template_dict["templateImageFile"],
-        rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
-        rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
-        font_colour=colour if colour else template_dict["defaultTextColour"],
-        font_name=font.lower() if font else "roboto"
+@bot.tree.command(name="overlay")
+async def overlay(interaction: discord.Interaction, overlay_command_name:str,image:discord.Attachment):
+    image_data = await image.read()
+    await interaction.response.defer()
+    overlay_dict = get_overlay(overlay_command_name)
+    imageworker = OverlayWorker(
+        image_overlay_name=overlay_command_name,
+        overlay_file_name = overlay_dict["overlayImageFile"],
+        overlay_offset_leftright=overlay_dict["overlayOffsetLR"],
+        overlay_offset_updown=overlay_dict["overlayOffsetUD"]
     )
+    response = imageworker.rectangle_overlay(image_data)
+    await interaction.followup.send(f"{response}")
 
 @bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
 async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "roboto", colour:str = None ):

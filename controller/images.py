@@ -306,18 +306,71 @@ class OverlayWorker:
     def __init__(
             self,
             image_overlay_name: str,
-            image_command_name: str,
-            overlay_overhang_leftright: int,
-            overlay_overhang_updown: int
+            overlay_file_name: str,
+            overlay_offset_leftright: int,
+            overlay_offset_updown: int
         ):
         self.image_overlay_name = image_overlay_name
-        self.image_command_name = image_command_name
-        self.overlay_overhang_leftright = overlay_overhang_leftright
-        self.overlay_overhang_updown = overlay_overhang_updown
+        self.overlay_file_name = overlay_file_name
+        self.overlay_overhang_leftright = overlay_offset_leftright
+        self.overlay_overhang_updown = overlay_offset_updown
+        self.overlay_image = Image.open(f"media/overlays/{self.overlay_file_name}").convert("RGBA")
 
-    def rectangle_overlay(self, original_image:Image, image_overlay:Image):
+    def rectangle_overlay(self, image_data:discord.Attachment):
+
+        self.image_data = bytes(image_data)
+        original_image = Image.open(io.BytesIO(image_data)).convert("RGBA")
+
         # Tamaño de la imagen
-        orig_width, orig_height = original_image.size()
-        over_width, over_height = original_image.size()
+        self.orig_width = original_image.size[0]
+        self.orig_height = original_image.size[1]
+        self.over_width = self.overlay_image.size[0]
+        self.over_height = self.overlay_image.size[1]
 
-        return(f"ORIGINAL: {orig_width}x{orig_height}, OVERLAY: {over_width}x{over_height}")
+        msg = self.overlay_place(self.overlay_image, original_image)
+        return(msg)
+
+    def overlay_place(self, overlay:Image, userImage:Image):
+        try:
+            # Las overlays probablemente requieran cambiar de tamaño y que sigan el tamaño de la imagen del usuario
+            # A diferencia de las imagenes de usuario, estas no las queremos distorsionar
+            # El best effort se nota: Vamos a hacer que la overlay esté en la misma escala que la imagen que nos han dado
+
+            resizedOverlay = overlay.copy()
+            resizedOverlay.thumbnail(userImage.size)
+            sizeRatio = resizedOverlay.size[0]/self.over_width
+
+            adjusted_overhang_leftright = int(sizeRatio*self.overlay_overhang_leftright)
+            adjusted_overhang_updown = int(sizeRatio*self.overlay_overhang_updown)
+
+            # Hacemos una imagen nueva y pegamos todo encima de mala manera, pero eso es sorprendentemente la mejor manera.
+
+            canvas_width = (max(self.orig_width, resizedOverlay.size[0])+abs(adjusted_overhang_leftright))
+            canvas_height = (max(self.orig_height, resizedOverlay.size[1])+abs(adjusted_overhang_updown))
+            canvas = Image.new("RGBA", (canvas_width, canvas_height), (0, 0, 0, 0))
+
+            # Para esto si que tiene que haber una mejor forma porque vamos, no me jodas
+            if (self.overlay_overhang_updown > 0):
+                if(self.overlay_overhang_leftright > 0):
+                    canvas.paste(userImage, (adjusted_overhang_leftright, adjusted_overhang_updown))
+                    canvas.paste(overlay, (0, 0), overlay)
+                else:
+                    canvas.paste(userImage, (0, adjusted_overhang_updown))
+                    canvas.paste(overlay, (adjusted_overhang_leftright, 0), overlay)
+            else:
+                if(self.overlay_overhang_leftright > 0):
+                    canvas.paste(userImage, (adjusted_overhang_leftright, 0))
+                    canvas.paste(overlay, (0, adjusted_overhang_updown), overlay)
+                else:
+                    canvas.paste(userImage, (0, 0))
+                    canvas.paste(overlay, (adjusted_overhang_leftright, adjusted_overhang_updown), overlay)
+
+            unique_id = hashlib.md5(self.image_data).hexdigest()[:10]
+            output_path = f"media/tmp/{self.image_overlay_name}-{unique_id}.png"
+            canvas.save(output_path)
+            return (f"ORIGINAL: {self.orig_width}x{self.orig_height}, OVERLAY: {resizedOverlay.size[0]}x{resizedOverlay.size[1]}")
+        except Exception as e:
+            print("OH COCK")
+            print(e)
+            return(-1)
+
