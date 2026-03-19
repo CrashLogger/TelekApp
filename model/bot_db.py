@@ -119,6 +119,54 @@ def get_templates():
 
     return result
 
+## Tiene que haber una mejor forma de hacer esto pero son las 23:28 y no quiero refactorizar la mitad del bot
+
+def get_overlay(overlay_command):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    query = """
+        SELECT *
+        FROM overlays
+        WHERE LOWER(overlayCommand) = LOWER(?)
+        ORDER BY idoverlay DESC
+        LIMIT 1;
+    """
+ 
+    c.execute(query, (overlay_command,))
+    row = c.fetchone()
+    conn.close()
+    return row
+
+def get_overlays():
+    """
+    Returns overlay information from SQL
+    """
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    query = """
+        SELECT idoverlay, overlayCommand, overlayImageFile from overlays
+    """
+
+    query += " ORDER BY idoverlay;"
+    c.execute(query)
+    rows = c.fetchall()
+    conn.close()
+
+    result = []
+    for row in rows:
+        overlayCommand = row["overlayCommand"]
+        overlayFile = row["overlayImageFile"]
+
+        if overlayCommand not in result:
+            result.append({"overlayCommand":overlayCommand, "overlayFile":overlayFile})
+
+    return result
+
 def get_random_response(trigger_content):
     match = get_trigger(trigger_content)
     if match:

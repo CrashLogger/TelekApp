@@ -68,3 +68,17 @@ CREATE TABLE templates (
     templateTextBoxBRY  INTEGER NOT NULL,
     defaultTextColour   varchar(16) NOT NULL
 );
+
+-- =========================
+-- TABLE: overlays
+-- =========================
+CREATE TABLE overlays (
+    idTemplate          INTEGER PRIMARY KEY AUTOINCREMENT,
+    templateCommand     varchar(255) NOT NULL,
+    templateImageFile   varchar(255) NOT NULL,
+    -- Left-right offset of the overlay relative to the original image. Positive->Overlay is to the left of the image, Negative->Overlay is to the right of the image
+    templateTextBoxTLX  INTEGER NOT NULL,
+    -- Up-down offset of the overlay relative to the original image. Positive->Overlay is above the image, Negative->Overlay is beneath the image.
+    templateTextBoxTLY  INTEGER NOT NULL,
+    defaultTextColour   varchar(16) NOT NULL
+);

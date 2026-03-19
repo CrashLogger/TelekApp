@@ -252,7 +252,7 @@ def template():
     try:
         create_template(template_data)
         # Save the file
-        save_path = os.path.join("image-templates", filename)
+        save_path = os.path.join("media/templates", filename)
         image.save(save_path)
         return jsonify({"message": "Template registered successfully"}), 200
     except Exception as e:

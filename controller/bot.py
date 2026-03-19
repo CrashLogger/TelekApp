@@ -51,6 +51,17 @@ async def avatar(interaction: discord.Interaction, user: discord.User = None):
     embed.set_image(url=avatar_url)
     await interaction.followup.send(embed=embed)
 
+async def overlay(interaction: discord.Interaction, image_overlay_name:str,image:discord.Attachment):
+    template_dict = get_template(template_command_name)
+    imageworker = TemplateWorker(
+        image_command_name=template_command_name,
+        image_template_name=template_dict["templateImageFile"],
+        rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
+        rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
+        font_colour=colour if colour else template_dict["defaultTextColour"],
+        font_name=font.lower() if font else "roboto"
+    )
+
 @bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
 async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "roboto", colour:str = None ):
     # Edita una imagen con una caption
@@ -112,7 +123,7 @@ async def triggers(interaction: discord.Interaction):
     triggerList:str = ""
     for template in templates:
         triggerList=triggerList + f"- {template}\n"
-    await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy triggers are:\n```{triggerList}```")
+    await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy templates are:\n```{triggerList}```")
 
 
 @bot.event
@@ -157,7 +168,7 @@ async def template_generic (interaction: discord.Interaction, template_command_n
                 imagehash = imageworker.image_and_animated_gif(image_data=image_data)
             else:
                 imagehash = imageworker.image_and_image(image_data=image_data)
-        file_path = f'image-templates/tmp/{template_command_name}-{imagehash}.{type}'
+        file_path = f'media/tmp/{template_command_name}-{imagehash}.{type}'
         file = discord.File(file_path, filename=f"{template_command_name}-{imagehash}.{type}")
     except Exception as e:
         print("Oh cock @ template")

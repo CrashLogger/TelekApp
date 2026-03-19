@@ -19,7 +19,7 @@ class TemplateWorker:
         self.rect_top_left = rect_top_left
         self.image_template_name = str(image_template_name)
         self.rect_bottom_right = rect_bottom_right
-        self.font_path = f"image-templates/fonts/{font_name}.ttf"
+        self.font_path = f"media/fonts/{font_name}.ttf"
         self.font_size = font_size
         self.image_command_name = image_command_name
 
@@ -45,20 +45,20 @@ class TemplateWorker:
     def image_and_image(self, image_data:discord.Attachment):
         # Abrir ambas imagenes
         image_data = bytes(image_data)
-        self.image = Image.open(f'image-templates/{self.image_template_name}').convert("RGBA")
+        self.image = Image.open(f'media/templates/{self.image_template_name}').convert("RGBA")
         image_pip = Image.open(io.BytesIO(image_data)).convert("RGBA")
 
         # Juntar y guardar
         result_image:Image = self.image_into_image(template=self.image, image_pip=image_pip)
-        os.makedirs("image-templates/tmp", exist_ok=True)
+        os.makedirs("media/tmp", exist_ok=True)
         unique_id = hashlib.md5(image_data).hexdigest()[:10]
-        result_image.save(f"image-templates/tmp/{self.image_command_name}-{unique_id}.png")
+        result_image.save(f"media/tmp/{self.image_command_name}-{unique_id}.png")
         return unique_id
 
     def image_and_animated_gif(self, image_data:discord.Attachment):
         # Juntamos una template con todos los frames de un gif y sacamos un gif de vuelta con mucho swag
         # Open the template image
-        template:Image = Image.open(f'image-templates/{self.image_template_name}').convert("RGBA")
+        template:Image = Image.open(f'media/templates/{self.image_template_name}').convert("RGBA")
         original_width, original_height = template.size
         max_gif_width = 800
         max_gif_height = 600
@@ -106,9 +106,9 @@ class TemplateWorker:
                 return self.image_and_image(image_data)
 
             # Guardar
-            os.makedirs("image-templates/tmp", exist_ok=True)
+            os.makedirs("media/tmp", exist_ok=True)
             unique_id = hashlib.md5(image_data).hexdigest()[:10]
-            output_path = f"image-templates/tmp/{self.image_command_name}-{unique_id}.gif"
+            output_path = f"media/tmp/{self.image_command_name}-{unique_id}.gif"
 
             # Save the first frame to get the dimensions
             frames[0].save(
@@ -131,7 +131,7 @@ class TemplateWorker:
     def image_and_text(self, caption: str):
         # Open an Image
         print(self.image_template_name)
-        self.image = Image.open(f'image-templates/{self.image_template_name}')
+        self.image = Image.open(f"media/templates/{self.image_template_name}")
 
         # Call draw Method to add 2D graphics in an image
         self.I1 = ImageDraw.Draw(self.image)
@@ -151,7 +151,7 @@ class TemplateWorker:
         except IOError:
             try:
                 # Primero probamos a cargar roboto, sobreescribiendo la fuente custom
-                self.font_path = f"image-templates/fonts/roboto.ttf"
+                self.font_path = f"media/fonts/roboto.ttf"
                 myFont = ImageFont.truetype(self.font_path, self.font_size)
             except IOError:
                 # Si roboto también falla, usamos la default de pillow, que es una mierda
@@ -224,13 +224,13 @@ class TemplateWorker:
             y_text += best_line_height
 
         # Guardamos archivo temporal
-        os.makedirs("image-templates/tmp", exist_ok=True)
+        os.makedirs("media/tmp", exist_ok=True)
         unique_id = hashlib.md5(caption.encode()).hexdigest()[:10]
-        self.image.save(f"image-templates/tmp/{self.image_command_name}-{unique_id}.png")
+        self.image.save(f"media/tmp/{self.image_command_name}-{unique_id}.png")
 
         return unique_id
     
-    # PAra dividir palabros
+    # Para dividir palabros
     def split_long_word(self, word, font, max_width):
         result = []
         current_segment = ""
@@ -301,3 +301,23 @@ class TemplateWorker:
             lines.append(' '.join(current_line))
         
         return lines
+    
+class OverlayWorker:
+    def __init__(
+            self,
+            image_overlay_name: str,
+            image_command_name: str,
+            overlay_overhang_leftright: int,
+            overlay_overhang_updown: int
+        ):
+        self.image_overlay_name = image_overlay_name
+        self.image_command_name = image_command_name
+        self.overlay_overhang_leftright = overlay_overhang_leftright
+        self.overlay_overhang_updown = overlay_overhang_updown
+
+    def rectangle_overlay(self, original_image:Image, image_overlay:Image):
+        # Tamaño de la imagen
+        orig_width, orig_height = original_image.size()
+        over_width, over_height = original_image.size()
+
+        return(f"ORIGINAL: {orig_width}x{orig_height}, OVERLAY: {over_width}x{over_height}")
