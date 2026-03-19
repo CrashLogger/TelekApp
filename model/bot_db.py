@@ -91,6 +91,34 @@ def get_template(template_command):
     conn.close()
     return row
 
+def get_templates():
+    """
+    Returns template information from SQL
+    """
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    query = """
+        SELECT idTemplate, templateCommand, templateImageFile from templates
+    """
+
+    query += " ORDER BY idTemplate;"
+    c.execute(query)
+    rows = c.fetchall()
+    conn.close()
+
+    result = []
+    for row in rows:
+        templateCommand = row["templateCommand"]
+        templateFile = row["templateImageFile"]
+
+        if templateCommand not in result:
+            result.append({"templateCommand":templateCommand, "templateFile":templateFile})
+
+    return result
+
 def get_random_response(trigger_content):
     match = get_trigger(trigger_content)
     if match:
