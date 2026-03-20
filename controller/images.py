@@ -337,38 +337,30 @@ class OverlayWorker:
             # El best effort se nota: Vamos a hacer que la overlay esté en la misma escala que la imagen que nos han dado
 
             resizedOverlay = overlay.copy()
-            resizedOverlay.thumbnail(userImage.size)
-            sizeRatio = resizedOverlay.size[0]/self.over_width
+            resizedOverlay = overlay.resize(userImage.size, Image.Resampling.LANCZOS)
+            sizeRatio = max(resizedOverlay.size[0]/self.over_width, resizedOverlay.size[1]/self.over_height)
 
             adjusted_overhang_leftright = int(sizeRatio*self.overlay_overhang_leftright)
             adjusted_overhang_updown = int(sizeRatio*self.overlay_overhang_updown)
 
-            # Hacemos una imagen nueva y pegamos todo encima de mala manera, pero eso es sorprendentemente la mejor manera.
+            # Posiciones
+            user_x = max(0, adjusted_overhang_leftright)
+            user_y = max(0, adjusted_overhang_updown)
+            overlay_x = max(0, -adjusted_overhang_leftright)
+            overlay_y = max(0, -adjusted_overhang_updown)
 
+            # Hacemos una imagen nueva y pegamos todo encima de mala manera, pero eso es sorprendentemente la mejor manera.
             canvas_width = (max(self.orig_width, resizedOverlay.size[0])+abs(adjusted_overhang_leftright))
             canvas_height = (max(self.orig_height, resizedOverlay.size[1])+abs(adjusted_overhang_updown))
             canvas = Image.new("RGBA", (canvas_width, canvas_height), (0, 0, 0, 0))
+            canvas.paste(userImage, (user_x, user_y), userImage)
+            canvas.paste(resizedOverlay, (overlay_x, overlay_y), resizedOverlay)
 
-            # Para esto si que tiene que haber una mejor forma porque vamos, no me jodas
-            if (self.overlay_overhang_updown > 0):
-                if(self.overlay_overhang_leftright > 0):
-                    canvas.paste(userImage, (adjusted_overhang_leftright, adjusted_overhang_updown))
-                    canvas.paste(overlay, (0, 0), overlay)
-                else:
-                    canvas.paste(userImage, (0, adjusted_overhang_updown))
-                    canvas.paste(overlay, (adjusted_overhang_leftright, 0), overlay)
-            else:
-                if(self.overlay_overhang_leftright > 0):
-                    canvas.paste(userImage, (adjusted_overhang_leftright, 0))
-                    canvas.paste(overlay, (0, adjusted_overhang_updown), overlay)
-                else:
-                    canvas.paste(userImage, (0, 0))
-                    canvas.paste(overlay, (adjusted_overhang_leftright, adjusted_overhang_updown), overlay)
-
+            # Guardar el fitxategi
             unique_id = hashlib.md5(self.image_data).hexdigest()[:10]
             output_path = f"media/tmp/{self.image_overlay_name}-{unique_id}.png"
             canvas.save(output_path)
-            return (f"ORIGINAL: {self.orig_width}x{self.orig_height}, OVERLAY: {resizedOverlay.size[0]}x{resizedOverlay.size[1]}")
+            return (unique_id)
         except Exception as e:
             print("OH COCK")
             print(e)

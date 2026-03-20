@@ -62,8 +62,11 @@ async def overlay(interaction: discord.Interaction, overlay_command_name:str,ima
         overlay_offset_leftright=overlay_dict["overlayOffsetLR"],
         overlay_offset_updown=overlay_dict["overlayOffsetUD"]
     )
-    response = imageworker.rectangle_overlay(image_data)
-    await interaction.followup.send(f"{response}")
+    unique_id = imageworker.rectangle_overlay(image_data)
+    file_path = f"media/tmp/{overlay_command_name}-{unique_id}.png"
+    file = discord.File(file_path, filename=f"{overlay_command_name}-{unique_id}.png")
+    await interaction.followup.send(file=file)
+    template_cleanup(file_path=file_path)
 
 @bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
 async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "roboto", colour:str = None ):
