@@ -2,9 +2,10 @@ import os
 import discord
 from discord import app_commands
 from dotenv import load_dotenv
-from model.bot_db import get_random_response, get_combos, get_template, get_templates
+from model.bot_db import get_random_response, get_combos, get_template, get_templates, get_overlay, get_overlays
 from model import misc
-from controller.images import TemplateWorker
+from controller.images import TemplateWorker, OverlayWorker, tmp_image_cleanup
+import traceback
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -41,6 +42,10 @@ bot = TelekApp(intents=intents)
 async def on_ready():
     print(f"Eyyyyy ey ey aaaaaqui {bot.user} v{misc.VERSION} eeeeeeen Discord")
 
+# ============================================================================================================================================== #
+# Comandos básicos
+# ============================================================================================================================================== #
+
 @bot.tree.command(name="avatar", description="Da la fotite de perfil de un usuario, o la tuya si no dices ningún usuario")
 async def avatar(interaction: discord.Interaction, user: discord.User = None):
     await interaction.response.defer()
@@ -50,6 +55,31 @@ async def avatar(interaction: discord.Interaction, user: discord.User = None):
     embed = discord.Embed(title=f"Fotite de: {user.display_name}", color=discord.Color.pink())
     embed.set_image(url=avatar_url)
     await interaction.followup.send(embed=embed)
+
+# ============================================================================================================================================== #
+# Overlays para imágenes
+# ============================================================================================================================================== #
+
+@bot.tree.command(name="overlay")
+async def overlay(interaction: discord.Interaction, overlay_command_name:str,image:discord.Attachment):
+    image_data = await image.read()
+    await interaction.response.defer()
+    overlay_dict = get_overlay(overlay_command_name)
+    imageworker = OverlayWorker(
+        image_overlay_name=overlay_command_name,
+        overlay_file_name = overlay_dict["overlayImageFile"],
+        overlay_offset_leftright=overlay_dict["overlayOffsetLR"],
+        overlay_offset_updown=overlay_dict["overlayOffsetUD"]
+    )
+    unique_id = imageworker.rectangle_overlay(image_data)
+    file_path = f"media/tmp/{overlay_command_name}-{unique_id}.png"
+    file = discord.File(file_path, filename=f"{overlay_command_name}-{unique_id}.png")
+    await interaction.followup.send(file=file)
+    tmp_image_cleanup(file_path=file_path)
+
+# ============================================================================================================================================== #
+# Templates de imágenes y/o texto
+# ============================================================================================================================================== #
 
 @bot.tree.command(name="template", description="Pone o texto o una imagen en otra.")
 async def template(interaction: discord.Interaction, image_template_name:str, caption: str=None, image:discord.Attachment = None, font:str = "roboto", colour:str = None ):
@@ -74,11 +104,13 @@ async def template(interaction: discord.Interaction, image_template_name:str, ca
             await interaction.followup.send(file=file)
         else:
             await interaction.followup.send("Owie :(")
-        template_cleanup(file_path=file_path)
+        tmp_image_cleanup(file_path=file_path)
     except Exception as e:
         await interaction.followup.send(f"Big owie owowowow :'((:\n{e}")
 
+# ============================================================================================================================================== #
 # Atajo para /sonic
+
 @bot.tree.command(name="sonic", description="Es un atajo para la plantilla de sonic, solo para texto, como en otros bots")
 async def sonic(interaction: discord.Interaction, caption: str, font:str = "Roboto", colour:str = None ):
     await interaction.response.defer()
@@ -88,13 +120,48 @@ async def sonic(interaction: discord.Interaction, caption: str, font:str = "Robo
             await interaction.followup.send(file=file)
         else:
             await interaction.followup.send("Owie :(")
-        template_cleanup(file_path=file_path)
+        tmp_image_cleanup(file_path=file_path)
     except Exception as e:
         await interaction.followup.send(f"Big owie owowowow :'((: \n{e}")
+
+async def template_generic (interaction: discord.Interaction, template_command_name:str, caption: str = None, font:str = "roboto", colour:str = None, image_data:discord.Attachment = None, type:str = 'png'):
+    file = None
+    try:
+        template_dict = get_template(template_command_name)
+        imageworker = TemplateWorker(
+            image_command_name=template_command_name,
+            image_template_name=template_dict["templateImageFile"],
+            rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
+            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
+            font_colour=colour if colour else template_dict["defaultTextColour"],
+            font_name=font.lower() if font else "roboto"
+        )
+        if caption:
+            imagehash = imageworker.image_and_text(caption=caption)
+        else:
+            if type=='gif':
+                imagehash = imageworker.image_and_animated_gif(image_data=image_data)
+            else:
+                imagehash = imageworker.image_and_image(image_data=image_data)
+        file_path = f'media/tmp/{template_command_name}-{imagehash}.{type}'
+        file = discord.File(file_path, filename=f"{template_command_name}-{imagehash}.{type}")
+    except Exception as e:
+        print("Oh cock @ template")
+        print(e)
+        traceback.print_exc()
+    
+    return file, file_path
+
+# ============================================================================================================================================== #
+# QoL Básico
+# ============================================================================================================================================== #
+
 
 @bot.tree.command(name="links", description="La nueva forma epica de poner links, en lugar del trigger url")
 async def links(interaction: discord.Interaction):
     await interaction.response.send_message(f"# URLs:\nChange my settings at:\n{misc.URL}\nBugs? Improvements?:\n{misc.ISSUES}")
+
+# ============================================================================================================================================== #
 
 @bot.tree.command(name="triggers", description="La nueva forma epica de ver los triggers, en lugar del trigger debug triggers")
 async def triggers(interaction: discord.Interaction):
@@ -105,6 +172,10 @@ async def triggers(interaction: discord.Interaction):
         triggerList=triggerList + f"- {trigger}\n"
     await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy triggers are:\n```{triggerList}```")
 
+# ============================================================================================================================================== #
+# DEPRECATED
+# ============================================================================================================================================== #
+
 @bot.tree.command(name="templates", description="Forma epica de ver los templates para shitposts que tenemos")
 async def triggers(interaction: discord.Interaction):
     templateData = get_templates()
@@ -112,8 +183,11 @@ async def triggers(interaction: discord.Interaction):
     triggerList:str = ""
     for template in templates:
         triggerList=triggerList + f"- {template}\n"
-    await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy triggers are:\n```{triggerList}```")
+    await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy templates are:\n```{triggerList}```")
 
+# ============================================================================================================================================== #
+# Autoresponder
+# ============================================================================================================================================== #
 
 @bot.event
 async def on_message(message):
@@ -135,38 +209,41 @@ async def on_message(message):
     if response:
         await message.channel.send(response)
 
+# ============================================================================================================================================== #
+# Autocompletes de templates y overlays. Supongo que habrá una mejor forma de hacer esto, pero por ahora, van dos funciones
+# ============================================================================================================================================== #
+
+
+async def template_autocomplete(interaction: discord.Interaction, current: str):
+    # Sacamos todas las templates de la DB
+    template_data = get_templates()
+    templates = [template["templateCommand"] for template in template_data]
+
+    # Filtrar en base a lo que se ha escrito por ahora
+    return [
+        app_commands.Choice(name=template, value=template)
+        for template in templates if current.lower() in template.lower()
+    ]
+
+async def overlay_autocomplete(interaction: discord.Interaction, current: str):
+    # Sacamos todas las templates de la DB
+    template_data = get_overlays()
+    templates = [template["overlayCommand"] for template in template_data]
+
+    # Filtrar en base a lo que se ha escrito por ahora
+    return [
+        app_commands.Choice(name=template, value=template)
+        for template in templates if current.lower() in template.lower()
+    ]
+
+
+# Se atakatuan a las funciones que lo implementen
+overlay.autocomplete("overlay_command_name")(overlay_autocomplete)
+template.autocomplete("image_template_name")(template_autocomplete)
+
+# ============================================================================================================================================== #
+# Arranque del bot. No sé donde debería estar así que lo pongo abajo del todo
+# ============================================================================================================================================== #
+
 def run_bot():
     bot.run(DISCORD_TOKEN)
-
-async def template_generic (interaction: discord.Interaction, template_command_name:str, caption: str = None, font:str = "roboto", colour:str = None, image_data:discord.Attachment = None, type:str = 'png'):
-    file = None
-    try:
-        template_dict = get_template(template_command_name)
-        imageworker = TemplateWorker(
-            image_command_name=template_command_name,
-            image_template_name=template_dict["templateImageFile"],
-            rect_top_left=[template_dict["templateTextBoxTLX"], template_dict["templateTextBoxTLY"]],
-            rect_bottom_right=[template_dict["templateTextBoxBRX"], template_dict["templateTextBoxBRY"]],
-            font_colour=colour if colour else template_dict["defaultTextColour"],
-            font_name=font.lower() if font else "roboto"
-        )
-        if caption:
-            imagehash = imageworker.image_and_text(caption=caption)
-        else:
-            if type=='gif':
-                imagehash = imageworker.image_and_animated_gif(image_data=image_data)
-            else:
-                imagehash = imageworker.image_and_image(image_data=image_data)
-        file_path = f'image-templates/tmp/{template_command_name}-{imagehash}.{type}'
-        file = discord.File(file_path, filename=f"{template_command_name}-{imagehash}.{type}")
-    except Exception as e:
-        print("Oh cock @ template")
-        print(e)
-    
-    return file, file_path
-
-def template_cleanup(file_path: str):
-    try:
-        os.remove(file_path)
-    except Exception as e:
-        print(f"Error deleting file {file_path}: {e}")

@@ -68,3 +68,21 @@ CREATE TABLE templates (
     templateTextBoxBRY  INTEGER NOT NULL,
     defaultTextColour   varchar(16) NOT NULL
 );
+
+-- =========================
+-- TABLE: overlays
+-- =========================
+CREATE TABLE overlays (
+    idOverlay          INTEGER PRIMARY KEY AUTOINCREMENT,
+    overlayCommand     varchar(255) NOT NULL,
+    overlayImageFile   varchar(255) NOT NULL,
+    -- Left-right offset of the overlay relative to the original image. Positive->Overlay is to the left of the image, Negative->Overlay is to the right of the image
+    overlayOffsetLR  INTEGER NOT NULL,
+    -- Up-down offset of the overlay relative to the original image. Positive->Overlay is above the image, Negative->Overlay is beneath the image.
+    overlayOffsetUD  INTEGER NOT NULL
+);
+
+-- =========================
+-- Porque ya me estoy volviendo loco, esta es la query para insertar cosas en esta tabla:
+-- INSERT INTO overlays (overlayCommand, overlayImageFile, overlayOffsetLR, overlayOffsetUD) VALUES ('your_command_here', 'your_image_file_here', offset_left_right, offset_up_down);
+-- =========================
