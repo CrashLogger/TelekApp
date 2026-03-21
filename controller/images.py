@@ -6,6 +6,11 @@ import hashlib
 from typing import List
 import discord
 
+def tmp_image_cleanup(file_path: str):
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        print(f"Error deleting file {file_path}: {e}")
 class TemplateWorker:
     def __init__(
         self,
@@ -207,4 +212,3 @@ class OverlayWorker:
             print("OH COCK")
             print(e)
             return(-1)
-
