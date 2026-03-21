@@ -27,11 +27,15 @@ class TemplateWorker:
         self.font_path = f"media/fonts/{font_name}.ttf"
         self.image_command_name = image_command_name
 
-        # Convert HEX color string to RGB tuple
-        self.font_color = tuple(int(font_colour[i:i+2], 16) for i in (0, 2, 4))
+        # Convertir la string #ABCDEF00 en un tuple de colores
+        self.font_colour = tuple(int(font_colour[i:i+2], 16) for i in (0, 2, 4))
 
         self.I1 = None
         self.image = None
+
+    # ============================================================================================================================================== #
+    # Junta dos frames. Lo usan image_and_image y image_and_animated_gif
+    # ============================================================================================================================================== #
 
     def image_into_image(self, template:Image, image_pip:Image):
         # Tamaño de la imagen
@@ -46,6 +50,10 @@ class TemplateWorker:
         template.paste(image_pip, (paste_x, paste_y), image_pip)
         return(template)
 
+    # ============================================================================================================================================== #
+    # Alinea una imagen en otra imagen
+    # ============================================================================================================================================== #
+
     def image_and_image(self, image_data:discord.Attachment):
         # Abrir ambas imagenes
         image_data = bytes(image_data)
@@ -58,6 +66,10 @@ class TemplateWorker:
         unique_id = hashlib.md5(image_data).hexdigest()[:10]
         result_image.save(f"media/tmp/{self.image_command_name}-{unique_id}.png")
         return unique_id
+
+    # ============================================================================================================================================== #
+    # Alinea un gif en una imagen
+    # ============================================================================================================================================== #
 
     def image_and_animated_gif(self, image_data:discord.Attachment):
         # Juntamos una template con todos los frames de un gif y sacamos un gif de vuelta con mucho swag
@@ -131,6 +143,10 @@ class TemplateWorker:
 
             return unique_id
 
+    # ============================================================================================================================================== #
+    # Alinea una string en una imagen
+    # ============================================================================================================================================== #
+
     def image_and_text(self, caption: str):
         # Open an Image
         print(self.image_template_name)
@@ -139,7 +155,7 @@ class TemplateWorker:
         # Call draw Method to add 2D graphics in an image
         self.I1 = ImageDraw.Draw(self.image)
 
-        textWorker = TextWorker(self.I1, font_path=self.font_path, textbox_topleft=self.rect_top_left, textbox_bottomright=self.rect_bottom_right)
+        textWorker = TextWorker(self.I1, font_path=self.font_path, textbox_topleft=self.rect_top_left, textbox_bottomright=self.rect_bottom_right, font_colour=self.font_colour)
         self.I1 = textWorker.text_auto_fit(caption=caption)
 
         # Guardamos archivo temporal
@@ -163,6 +179,10 @@ class OverlayWorker:
         self.overlay_overhang_updown = overlay_offset_updown
         self.overlay_image = Image.open(f"media/overlays/{self.overlay_file_name}").convert("RGBA")
 
+    # ============================================================================================================================================== #
+    # Ingesta de imágenes y tamaños, bare minimum
+    # ============================================================================================================================================== #
+
     def rectangle_overlay(self, image_data:discord.Attachment):
 
         self.image_data = bytes(image_data)
@@ -176,6 +196,10 @@ class OverlayWorker:
 
         msg = self.overlay_place(self.overlay_image, original_image)
         return(msg)
+
+    # ============================================================================================================================================== #
+    # Junta la imagen de overlay encima de la imagen del usuario
+    # ============================================================================================================================================== #
 
     def overlay_place(self, overlay:Image, userImage:Image):
         try:
@@ -209,6 +233,5 @@ class OverlayWorker:
             canvas.save(output_path)
             return (unique_id)
         except Exception as e:
-            print("OH COCK")
             print(e)
             return(-1)

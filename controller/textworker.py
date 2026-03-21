@@ -8,11 +8,12 @@ class TextWorker:
         font_path: str = None,
         textbox_topleft: List[int] = None,
         textbox_bottomright: List[int] = None,
-        font_color: tuple = (255, 255, 255),
+        font_colour: tuple = (255, 255, 255, 255)
     ):
         self.draw_canvas = draw_canvas
         self.font_path = font_path
-        self.font_color = font_color
+        self.font_colour = font_colour
+        print(self.font_colour)
         self.rect_top_left = textbox_topleft
         self.rect_bottom_right = textbox_bottomright
 
@@ -129,5 +130,5 @@ class TextWorker:
         for line in best_lines:
             raw_width = self.get_text_width(line, best_font)
             x_text = self.rect_top_left[0] + self.padding + (self.max_text_width - raw_width) // 2
-            self.draw_canvas.text((x_text, y_text), line, font=best_font, fill=self.font_color)
+            self.draw_canvas.text((x_text, y_text), line, font=best_font, fill=self.font_colour)
             y_text += best_line_height
