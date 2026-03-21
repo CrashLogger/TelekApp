@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from model.bot_db import get_random_response, get_combos, get_template, get_templates, get_overlay, get_overlays
 from model import misc
 from controller.images import TemplateWorker, OverlayWorker
+import traceback
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -179,6 +180,7 @@ async def template_generic (interaction: discord.Interaction, template_command_n
     except Exception as e:
         print("Oh cock @ template")
         print(e)
+        traceback.print_exc()
     
     return file, file_path
 
