@@ -44,16 +44,20 @@
     { "trigger": "trigger_1", "autoresponse": "response_1" },  
     { "trigger": "trigger_2", "autoresponse": "response_2" }, 
     { "trigger": "trigger_3", "autoresponse": "response_3" }   
-]</pre>
-        </form>
-        </div>
-        <div>
+    ]</pre>
+</form>
+</div>
+    <div>
         <h2>Respuestas disponibles</h2>
         <ul id="combos"></ul>
-            
+    </div>
 
+    <div>
+        <h2>Templates disponibles</h2>
+        <ul id="templates"></ul>
     </div>
-    </div>
+
+</div>
    
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/core.js"></script>
@@ -66,6 +70,7 @@
 
     if (await checkToken(token)) {
         await getCombos(token);
+        await getTemplates(token);
 
         document.getElementById("logout").addEventListener("click", async function(event) {
             localStorage.removeItem("token-telekapp");
@@ -330,6 +335,69 @@ combo.responses.forEach(response => {
         combos.innerHTML = "<li>Failed to load combos</li>";
     }
 }
+
+
+// Fetch and display templates
+async function getTemplates(token) {
+    const list = document.getElementById("templates");
+
+    try {
+        const response = await fetch(apiUrl + "template", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        list.innerHTML = "";
+
+        for (const tpl of data) {
+            const li = document.createElement("li");
+
+            // Keyword, bold like the combo triggers
+            const name = document.createElement("p");
+            name.style.fontWeight = "bold";
+            name.innerText = tpl.template_command;
+            li.appendChild(name);
+
+            // Preview: <img> can't send headers, so fetch the blob with the token
+            try {
+                const imgResponse = await fetch(
+                    apiUrl + "template_image/" + encodeURIComponent(tpl.template_image_file),
+                    { headers: { "Authorization": `Bearer ${token}` } }
+                );
+                if (imgResponse.ok) {
+                    const img = document.createElement("img");
+                    img.src = URL.createObjectURL(await imgResponse.blob());
+                    img.alt = tpl.template_image_file;
+                    img.style.maxWidth = "200px";
+                    li.appendChild(img);
+                }
+            } catch (e) {
+                console.error("Error loading template image:", e);
+            }
+
+            // Text box coordinates
+            const coords = document.createElement("span");
+            coords.className = "response-text";
+            coords.innerText = `Texto: (${tpl.text_box_tl_x}, ${tpl.text_box_tl_y}) -> (${tpl.text_box_br_x}, ${tpl.text_box_br_y})`;
+            li.appendChild(coords);
+
+            // Colour swatch (stored as RRGGBBAA, so take the first 6 chars)
+            const colour = document.createElement("span");
+            colour.innerText = " \u25A0";
+            colour.style.color = "#" + tpl.default_text_colour.slice(0, 6);
+            li.appendChild(colour);
+
+            list.appendChild(li);
+        }
+    } catch (error) {
+        console.error("Error fetching templates:", error);
+        list.innerHTML = "<li>Failed to load templates</li>";
+    }
+}
+
+
 
 // Login function
 async function login() {

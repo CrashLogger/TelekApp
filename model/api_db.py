@@ -76,6 +76,22 @@ def get_combos(trigger_content:str=None):
     sorted_list = sorted(result.values(), key=lambda x: x['trigger'])
     return list(sorted_list)
 
+# Cambiando el case. Barkatu :pensive:
+def get_templates():
+    db = get_db()
+    cursor = db.execute(
+        "SELECT "
+        "templateCommand AS template_command, "
+        "templateImageFile AS template_image_file, "
+        "templateTextBoxTLX AS text_box_tl_x, "
+        "templateTextBoxTLY AS text_box_tl_y, "
+        "templateTextBoxBRX AS text_box_br_x, "
+        "templateTextBoxBRY AS text_box_br_y, "
+        "defaultTextColour AS default_text_colour "
+        "FROM templates"
+    )
+    return [dict(row) for row in cursor.fetchall()]
+
 # =========================
 # Insert Functions
 # =========================
