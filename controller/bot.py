@@ -170,7 +170,7 @@ async def triggers(interaction: discord.Interaction):
     triggerList:str = ""
     for trigger in triggers:
         triggerList=triggerList + f"- {trigger}\n"
-    await interaction.response.send_message(f"TelekApp version:{misc.VERSION}\nMy triggers are:\n```{triggerList}```")
+    await interaction.response.send_message(f"## TelekApp version: {misc.VERSION}\nMy triggers are:\n```{triggerList}```")
 
 # ============================================================================================================================================== #
 # DEPRECATED
