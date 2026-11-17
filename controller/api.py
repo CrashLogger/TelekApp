@@ -257,7 +257,22 @@ def template():
         return jsonify({"message": "Template registered successfully"}), 200
     except Exception as e:
         return jsonify({"error":f"ha ocurrido un extraño suseso"}), 500
-    
+
+@app.route('/TelekApp/template', methods=['GET'])
+@requires_auth
+def get_templates_route():
+    try:
+        return jsonify(get_templates()), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch templates: {str(e)}"}), 500
+
+@app.route('/TelekApp/template_image/<filename>', methods=['GET'])
+@requires_auth
+def template_image(filename):
+    # Same whitelist as the upload route, so nobody fishes for other files
+    if filename.rsplit(".", 1)[-1].lower() not in ALLOWED_EXTENSIONS:
+        return jsonify({"error": "No ha colado crack"}), 400
+    return send_from_directory(os.path.join(PROJECT_ROOT, 'media', 'templates'), filename)
     
 
 def check_auth(username, password_hash):
