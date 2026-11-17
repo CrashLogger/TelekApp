@@ -92,6 +92,42 @@ def get_templates():
     )
     return [dict(row) for row in cursor.fetchall()]
 
+def get_template(template_command):
+    db = get_db()
+
+    cursor = db.execute("""
+        SELECT
+            templateCommand AS template_command,
+            templateImageFile AS template_image_file,
+            templateTextBoxTLX AS text_box_tl_x,
+            templateTextBoxTLY AS text_box_tl_y,
+            templateTextBoxBRX AS text_box_br_x,
+            templateTextBoxBRY AS text_box_br_y,
+            defaultTextColour AS default_text_colour
+        FROM templates
+        WHERE templateCommand = ?
+    """, (template_command,))
+
+    row = cursor.fetchone()
+
+    if row:
+        return dict(row)
+
+    return None
+
+def delete_template(template_command):
+    db = get_db()
+    c = db.cursor()
+
+    c.execute(
+        "DELETE FROM templates WHERE templateCommand = ?",
+        (template_command,)
+    )
+
+    db.commit()
+
+    return c.rowcount
+
 # =========================
 # Insert Functions
 # =========================

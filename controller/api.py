@@ -273,7 +273,51 @@ def template_image(filename):
     if filename.rsplit(".", 1)[-1].lower() not in ALLOWED_EXTENSIONS:
         return jsonify({"error": "No ha colado crack"}), 400
     return send_from_directory(os.path.join(PROJECT_ROOT, 'media', 'templates'), filename)
-    
+
+@app.route('/TelekApp/template/delete', methods=['POST'])
+@requires_auth
+def delete_template_route():
+
+    data = request.get_json()
+
+    template_command = data.get("template_command")
+
+    if not template_command:
+        return jsonify({"error":"No template specified"}), 400
+
+    try:
+
+        template = get_template(template_command)
+
+        if not template:
+            return jsonify({"error":"Template not found"}), 404
+
+        filename = template["template_image_file"]
+
+        deleted = delete_template(template_command)
+
+        if deleted == 0:
+            return jsonify({"error":"Nothing deleted"}), 404
+
+        filepath = os.path.join(
+            PROJECT_ROOT,
+            "media",
+            "templates",
+            filename
+        )
+
+        if os.path.isfile(filepath):
+            os.remove(filepath)
+
+        return jsonify({
+            "message":"Template deleted successfully"
+        }), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error":str(e)}), 500
+
+
 
 def check_auth(username, password_hash):
     return authenticate(username, password_hash)

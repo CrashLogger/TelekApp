@@ -156,6 +156,46 @@ async function getTemplates() {
             )
         );
 
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete-btn";
+        deleteButton.innerText = "💥 Suntsiketa 🗑️";
+
+        deleteButton.addEventListener("click", async () => {
+
+            if (!confirm(`⚠️ Oso suntsitzailea ⚠️\n${tpl.template_command} betiko ezabatu nahi duzu?`))
+            {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    apiUrl + "template/delete",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            template_command: tpl.template_command
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                card.remove();
+
+            } catch (error) {
+                console.error(error);
+                alert("Ba ezin izan dut 😔");
+            }
+        });
+
+        details.appendChild(deleteButton);
+
         details.appendChild(coords);
         details.appendChild(colourRow);
 
