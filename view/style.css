@@ -210,3 +210,59 @@ img[src*="nerd"] {
 img:hover {
     animation: elegantSpin 2s linear infinite;
 }
+
+/* TEMPLATES PAGE */
+
+#templates-panel {
+    margin: 2rem auto;
+    padding: 2rem;
+    width: 80%;
+    background: #fff0f5;
+    border: 4px dashed #ff69b4;
+    border-radius: 20px;
+}
+
+.template-card {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;   /* keyword | image | details */
+    align-items: center;
+    gap: 1rem;
+    background: #ffe4ec;
+    margin: 0.8rem auto;
+    padding: 1rem;
+    width: 85%;
+    border-radius: 15px;
+    border: 2px dotted #ff69b4;
+    text-align: left;
+}
+
+.template-keyword {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #c71585;
+    text-shadow: 1px 1px 0 white;
+}
+
+.template-image img {
+    display: block;
+    margin: 0 auto;
+}
+
+.template-details {
+    font-size: 0.95rem;
+    justify-self: end;
+}
+
+.template-details p {
+    margin: 0.3rem 0;
+}
+
+.colour-swatch {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border-radius: 5px;
+    border: 2px solid #c71585;
+    vertical-align: middle;
+    margin-right: 0.3rem;
+}

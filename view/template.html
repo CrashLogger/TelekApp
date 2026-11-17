@@ -26,6 +26,10 @@
         </form>
     </div>
     
+    <div id="templates-panel">
+        <h2>Templates disponibles</h2>
+        <div id="templates"></div>
+    </div>
 
 </body>
 
@@ -76,5 +80,135 @@ document.getElementById("template_form").addEventListener("submit",async functio
     }
 });
 
+
+// Fetch and display templates
+// The token is global here so we inherit it from index.html's context
+// No need to add it to the function call! :)
+
+async function getTemplates() {
+    const list = document.getElementById("templates");
+
+    try {
+        const response = await fetch(apiUrl + "template", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        list.innerHTML = "";
+
+        for (const tpl of data) {
+
+        const card = document.createElement("div");
+        card.className = "template-card";
+
+        // ========= LEFT COLUMN =========
+        const keyword = document.createElement("div");
+        keyword.className = "template-keyword";
+        keyword.innerText = tpl.template_command;
+
+        // ========= CENTER COLUMN =========
+        const imageContainer = document.createElement("div");
+        imageContainer.className = "template-image";
+
+        try {
+            const imgResponse = await fetch(
+                apiUrl + "template_image/" + encodeURIComponent(tpl.template_image_file),
+                {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (imgResponse.ok) {
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(await imgResponse.blob());
+                img.alt = tpl.template_image_file;
+                img.style.maxWidth = "250px";
+
+                imageContainer.appendChild(img);
+            }
+        } catch (e) {
+            console.error("Error loading template image:", e);
+        }
+
+        // ========= RIGHT COLUMN =========
+        const details = document.createElement("div");
+        details.className = "template-details";
+
+        const coords = document.createElement("p");
+        coords.innerText =
+            `(${tpl.text_box_tl_x}, ${tpl.text_box_tl_y}) → (${tpl.text_box_br_x}, ${tpl.text_box_br_y})`;
+
+        const colourRow = document.createElement("p");
+
+        const swatch = document.createElement("span");
+        swatch.className = "colour-swatch";
+        swatch.style.backgroundColor =
+            "#" + tpl.default_text_colour.slice(0, 6);
+
+        colourRow.appendChild(swatch);
+        colourRow.appendChild(
+            document.createTextNode(
+                "#" + tpl.default_text_colour.slice(0, 6)
+            )
+        );
+
+        details.appendChild(coords);
+        details.appendChild(colourRow);
+
+        // ========= ASSEMBLE =========
+        card.appendChild(keyword);
+        card.appendChild(imageContainer);
+        card.appendChild(details);
+
+        list.appendChild(card);
+    }} catch (error) {
+        console.error("Error fetching templates:", error);
+        list.innerHTML = "<li>Failed to load templates</li>";
+    }
+}
+
+//To redirect everyone who isn't logged in back to the login page
+async function checkLogin() {
+    const token = localStorage.getItem("token-telekapp");
+
+    if (!token) {
+        window.location.href = "index.html";
+        return false;
+    }
+
+    try {
+        const response = await fetch(apiUrl + "check_token", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            localStorage.removeItem("token-telekapp");
+            window.location.href = "index.html";
+            return false;
+        }
+
+        return true;
+
+    } catch (err) {
+        console.error(err);
+        window.location.href = "index.html";
+        return false;
+    }
+}
+
+
+(async () => {
+    const loggedIn = await checkLogin();
+
+    if (loggedIn) {
+        getTemplates();
+    }
+})();
 
 </script>
