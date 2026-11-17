@@ -215,6 +215,10 @@ def  register():
     except Exception as e:
         return jsonify({"error":f"ha ocurrido un extraño suseso"}), 500
 
+# ===========================
+# TEMPLATES
+# ===========================
+
 @app.route('/TelekApp/template',methods=['POST'])
 @requires_auth
 def template():
@@ -317,7 +321,140 @@ def delete_template_route():
         print(e)
         return jsonify({"error":str(e)}), 500
 
+# ===========================
+# OVERLAYS
+# ===========================
+@app.route('/TelekApp/overlay', methods=['GET'])
+@requires_auth
+def get_overlays_route():
+    try:
+        return jsonify(get_overlays()), 200
+    except Exception as e:
+        return jsonify({
+            "error": f"Failed to fetch overlays: {str(e)}"
+        }), 500
 
+@app.route('/TelekApp/overlay', methods=['POST'])
+@requires_auth
+def overlay():
+
+    print("ENTERED OVERLAY ROUTE")
+    print("FILES:", request.files)
+    print("FORM:", request.form)
+
+    ...
+
+    if "overlay" not in request.files:
+        return jsonify({"error": "No image provided"}), 400
+
+    image = request.files["overlay"]
+
+    filename = image.filename.lower()
+
+    extension = filename.rsplit(".", 1)[1]
+
+    if extension not in ALLOWED_EXTENSIONS:
+        return jsonify({"error": "No ha colado crack"}), 400
+
+    overlay_name = request.form.get("overlay_name")
+
+    overlay_lr = int(request.form.get("coordinates_lr", 0))
+    overlay_ud = int(request.form.get("coordinates_ud", 0))
+
+    overlay_data = {
+        "overlay_command": overlay_name.lower(),
+        "overlay_image_file": filename,
+        "overlay_offset_lr": overlay_lr,
+        "overlay_offset_ud": overlay_ud
+    }
+
+    try:
+        create_overlay(overlay_data)
+
+        save_path = os.path.join(
+            "media",
+            "overlays",
+            filename
+        )
+
+        image.save(save_path)
+
+        return jsonify({
+            "message": "Overlay registered successfully"
+        }), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+@app.route('/TelekApp/overlay/delete', methods=['POST'])
+@requires_auth
+def delete_overlay_route():
+
+    data = request.get_json()
+
+    overlay_command = data.get("overlay_command")
+
+    if not overlay_command:
+        return jsonify({
+            "error": "No overlay specified"
+        }), 400
+
+    try:
+        overlay = get_overlay(overlay_command)
+
+        if not overlay:
+            return jsonify({
+                "error": "Overlay not found"
+            }), 404
+
+        filename = overlay["overlay_image_file"]
+
+        deleted = delete_overlay(overlay_command)
+
+        if deleted == 0:
+            return jsonify({
+                "error": "Nothing deleted"
+            }), 404
+
+        filepath = os.path.join(
+            PROJECT_ROOT,
+            "media",
+            "overlays",
+            filename
+        )
+
+        if os.path.isfile(filepath):
+            os.remove(filepath)
+
+        return jsonify({
+            "message": "Overlay deleted successfully"
+        }), 200
+
+    except Exception as e:
+        print(e)
+
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+@app.route('/TelekApp/overlay_image/<filename>', methods=['GET'])
+@requires_auth
+def overlay_image(filename):
+
+    if filename.rsplit(".", 1)[-1].lower() not in ALLOWED_EXTENSIONS:
+        return jsonify({"error": "No ha colado crack"}), 400
+
+    return send_from_directory(
+        os.path.join(PROJECT_ROOT, 'media', 'overlays'),
+        filename
+    )
+
+# ===========================
+# MISC
+# ===========================
 
 def check_auth(username, password_hash):
     return authenticate(username, password_hash)
