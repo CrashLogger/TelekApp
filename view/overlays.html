@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bot telekil</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Irudien gainean ipintzen diren irudiak</h1>
+    <p>REACTION</p>
+    <p style= "color: teal"><b><u>NO</u></b> vale "BAZINGA"</p>
+    <div>
+        <button onclick="window.location.href='index.html'">Atzera</button>
+        <button id="new_overlay">Sortu overlay berria</button>
+        <form id="overlay_form" hidden>
+            <label >Irudia:</label>
+            <input type="file" id="overlay_input" name="overlay_fitx">
+            <label >overlayaren izena:</label>
+            <input type="text" id="overlay_name" placeholder="Izena">
+            <label >Overlay-aren Ezker-Eskuin offset-a:</label>
+            <input type="text" id="overlay_lr" placeholder="+Ezker,-Eskuin">
+            <label >Textuaren Bottom Right izkina:</label>
+            <input type="text" id="overlay_ud" placeholder="+Up,-Down">
+            <button type="submit">Botau</button>
+        </form>
+    </div>
+    
+    <div id="templates-panel">
+        <h2>overlays disponibles</h2>
+        <div id="overlays"></div>
+    </div>
+
+</body>
+
+<script>
+    const token = localStorage.getItem("token-telekapp") || null;
+    const apiUrl =  window.location.origin + "/TelekApp/";
+document.getElementById("new_overlay").addEventListener("click", async function(event) {
+    document.getElementById("overlay_form").toggleAttribute("hidden");
+});
+
+document.getElementById("overlay_form").addEventListener("submit",async function(event){
+    event.preventDefault();
+    const formData = new FormData();
+
+    const file = document.getElementById("overlay_input").files[0];
+    const overlay_name = document.getElementById("overlay_name").value;
+    const coordinates_lr = document.getElementById("overlay_lr").value;
+    const coordinates_ud = document.getElementById("overlay_ud").value;
+    formData.append("overlay", file);
+    formData.append("overlay_name", overlay_name);
+    formData.append("coordinates_lr", coordinates_lr);
+    formData.append("coordinates_ud", coordinates_ud);
+                
+    try {
+        const response = await fetch(apiUrl + "overlay", {
+            method: "POST",
+            headers: {
+            "Authorization": `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        console.log("Created combo from file:", data);
+        document.getElementById('overlay_input').value = '';
+        document.getElementById('overlay_name').value = '';
+        document.getElementById('overlay_lr').value = '';
+        document.getElementById('overlay_ud').value = '';
+        window.location.reload();
+
+    } catch (error) {
+        console.error("Error creating combo from file:", error);
+    }
+});
+
+
+// Fetch and display overlays
+// The token is global here so we inherit it from index.html's context
+// No need to add it to the function call! :)
+
+async function getoverlays() {
+    const list = document.getElementById("overlays");
+
+    try {
+        const response = await fetch(apiUrl + "overlay", {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        list.innerHTML = "";
+
+        for (const tpl of data) {
+
+        const card = document.createElement("div");
+        card.className = "template-card";
+
+        // ========= LEFT COLUMN =========
+        const keyword = document.createElement("div");
+        keyword.className = "template-keyword";
+        keyword.innerText = tpl.overlay_command;
+
+        // ========= CENTER COLUMN =========
+        const imageContainer = document.createElement("div");
+        imageContainer.className = "template-image";
+
+        try {
+            const imgResponse = await fetch(
+                apiUrl + "overlay_image/" + encodeURIComponent(tpl.overlay_image_file),
+                {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (imgResponse.ok) {
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(await imgResponse.blob());
+                img.alt = tpl.overlay_image_file;
+                img.style.maxWidth = "250px";
+
+                imageContainer.appendChild(img);
+            }
+        } catch (e) {
+            console.error("Error loading overlay image:", e);
+        }
+
+        // ========= RIGHT COLUMN =========
+        const details = document.createElement("div");
+        details.className = "template-details";
+
+        const coords = document.createElement("p");
+
+        coords.innerText =
+            `LR Offset: ${tpl.overlay_offset_lr}px | UD Offset: ${tpl.overlay_offset_ud}px`;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete-btn";
+        deleteButton.innerText = "💥 Suntsiketa 🗑️";
+
+        deleteButton.addEventListener("click", async () => {
+
+            if (!confirm(`⚠️ Oso suntsitzailea ⚠️\n${tpl.overlay_command} betiko ezabatu nahi duzu?`))
+            {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    apiUrl + "overlay/delete",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            overlay_command: tpl.overlay_command
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                card.remove();
+
+            } catch (error) {
+                console.error(error);
+                alert("Ba ezin izan dut 😔");
+            }
+        });
+
+        details.appendChild(deleteButton);
+
+        details.appendChild(coords);
+
+        // ========= ASSEMBLE =========
+        card.appendChild(keyword);
+        card.appendChild(imageContainer);
+        card.appendChild(details);
+
+        list.appendChild(card);
+    }} catch (error) {
+        console.error("Error fetching overlays:", error);
+        list.innerHTML = "<li>Failed to load overlays</li>";
+    }
+}
+
+//To redirect everyone who isn't logged in back to the login page
+async function checkLogin() {
+    const token = localStorage.getItem("token-telekapp");
+
+    if (!token) {
+        window.location.href = "index.html";
+        return false;
+    }
+
+    try {
+        const response = await fetch(apiUrl + "check_token", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            localStorage.removeItem("token-telekapp");
+            window.location.href = "index.html";
+            return false;
+        }
+
+        return true;
+
+    } catch (err) {
+        console.error(err);
+        window.location.href = "index.html";
+        return false;
+    }
+}
+
+
+(async () => {
+    const loggedIn = await checkLogin();
+
+    if (loggedIn) {
+        getoverlays();
+    }
+})();
+
+</script>

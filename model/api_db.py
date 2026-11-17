@@ -115,18 +115,42 @@ def get_template(template_command):
 
     return None
 
-def delete_template(template_command):
+def get_overlays():
     db = get_db()
-    c = db.cursor()
 
-    c.execute(
-        "DELETE FROM templates WHERE templateCommand = ?",
-        (template_command,)
+    cursor = db.execute(
+        "SELECT "
+        "overlayCommand AS overlay_command, "
+        "overlayImageFile AS overlay_image_file, "
+        "overlayOffsetLR AS overlay_offset_lr, "
+        "overlayOffsetUD AS overlay_offset_ud "
+        "FROM overlays"
     )
 
-    db.commit()
+    return [dict(row) for row in cursor.fetchall()]
 
-    return c.rowcount
+def get_overlay(overlay_command):
+    db = get_db()
+
+    cursor = db.execute(
+        """
+        SELECT
+            overlayCommand AS overlay_command,
+            overlayImageFile AS overlay_image_file,
+            overlayOffsetLR AS overlay_offset_lr,
+            overlayOffsetUD AS overlay_offset_ud
+        FROM overlays
+        WHERE overlayCommand = ?
+        """,
+        (overlay_command,)
+    )
+
+    row = cursor.fetchone()
+
+    if row:
+        return dict(row)
+
+    return None
 
 # =========================
 # Insert Functions
@@ -200,8 +224,8 @@ def create_combo_from_file(idsTrigger,idsResponse):
     db.commit()
     return inserted_ids
 
-# Para cuando haga la API de meter templates:
-# INSERT INTO templates (templateCommand, templateImageFile, templateTextBoxTLX, templateTextBoxTLY, templateTextBoxBRX, templateTextBoxBRY, defaultTextColour)  VALUES ('gaming', 'gaming.png', 5, 5, 320, 240, 'FFFFFFFF')
+# Template eta overlays
+# Super messy :(
 
 def create_template(template_data):
     """
@@ -239,8 +263,29 @@ def create_template(template_data):
     db.commit()
     return c.lastrowid
 
+def create_overlay(overlay_data):
+    db = get_db()
+    c = db.cursor()
 
+    c.execute("""
+        INSERT INTO overlays
+        (
+            overlayCommand,
+            overlayImageFile,
+            overlayOffsetLR,
+            overlayOffsetUD
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        overlay_data["overlay_command"],
+        overlay_data["overlay_image_file"],
+        overlay_data["overlay_offset_lr"],
+        overlay_data["overlay_offset_ud"]
+    ))
 
+    db.commit()
+
+    return c.lastrowid
 
 # =========================
 # Delete Functions
@@ -275,6 +320,37 @@ def delete_combo(trigger_content, response_content):
     db.commit()
     print(f"[DEBUG] Total rows deleted: {deleted_rows}")
     return deleted_rows
+
+def delete_template(template_command):
+    db = get_db()
+    c = db.cursor()
+
+    c.execute(
+        "DELETE FROM templates WHERE templateCommand = ?",
+        (template_command,)
+    )
+
+    db.commit()
+
+    return c.rowcount
+
+def delete_overlay(overlay_command):
+    db = get_db()
+    c = db.cursor()
+
+    c.execute(
+        "DELETE FROM overlays WHERE overlayCommand = ?",
+        (overlay_command,)
+    )
+
+    db.commit()
+
+    return c.rowcount
+
+# =========================
+# misc Functions
+# =========================
+
 
 def authenticate(username, password_hash):
     db = get_db()
